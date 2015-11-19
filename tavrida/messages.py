@@ -54,6 +54,7 @@ class Message(object):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  message_type,
                  reply_to,
@@ -70,6 +71,7 @@ class Message(object):
             raise TypeError('payload must be dict, received {}'
                             .format(type(payload)))
 
+        self.correlation_id = correlation_id
         self.request_id = request_id
         self.message_id = uuid.uuid4().hex
         self.message_type = message_type
@@ -82,6 +84,7 @@ class Message(object):
     @property
     def headers(self):
         return {
+            "correlation_id": self.correlation_id,
             "request_id": self.request_id,
             "message_id": self.message_id,
             "message_type": self.message_type,
@@ -123,6 +126,7 @@ class IncomingRequest(Message, Incoming):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  reply_to,
                  source,
@@ -130,6 +134,7 @@ class IncomingRequest(Message, Incoming):
                  context,
                  **payload):
         super(IncomingRequest, self).__init__(
+            correlation_id,
             request_id,
             "request",
             reply_to,
@@ -164,12 +169,14 @@ class IncomingRequestCast(IncomingRequest):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  source,
                  destination,
                  context,
                  **payload):
         super(IncomingRequestCast, self).__init__(
+            correlation_id,
             request_id,
             entry_point.NullEntryPoint(),
             source,
@@ -185,13 +192,17 @@ class Request(Message, Outgoing):
     """
 
     def __init__(self,
+                 correlation_id,
                  reply_to,
                  source,
                  destination,
                  context,
                  **payload):
+        if not correlation_id:
+            correlation_id = str(uuid.uuid4())
         request_id = uuid.uuid4().hex
         super(Request, self).__init__(
+            correlation_id,
             request_id,
             "request",
             reply_to,
@@ -201,11 +212,10 @@ class Request(Message, Outgoing):
             payload)
 
     @classmethod
-    def create_transfer(cls, request_id, reply_to, source, destination,
-                        **payload):
+    def create_transfer(cls, correlation_id, reply_to, source,
+                        destination, **payload):
 
-        req = cls(reply_to, source, destination, **payload)
-        req.request_id = request_id
+        req = cls(correlation_id, reply_to, source, destination, **payload)
         return req
 
 
@@ -216,6 +226,7 @@ class BaseResponse(Message):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  source,
                  destination,
@@ -223,6 +234,7 @@ class BaseResponse(Message):
                  **payload):
 
         super(BaseResponse, self).__init__(
+            correlation_id,
             request_id,
             "response",
             entry_point.NullEntryPoint(),
@@ -261,6 +273,7 @@ class Response(BaseResponse, Outgoing):
         """
 
         return cls(
+            correlation_id=request.correlation_id,
             request_id=request.request_id,
             source=request.destination,
             destination=request.reply_to,
@@ -276,6 +289,7 @@ class BaseError(Message):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  source,
                  destination,
@@ -283,6 +297,7 @@ class BaseError(Message):
                  **payload):
 
         super(BaseError, self).__init__(
+            correlation_id,
             request_id,
             "error",
             entry_point.NullEntryPoint(),
@@ -307,6 +322,7 @@ class Error(BaseError, Outgoing):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  source,
                  destination,
@@ -324,6 +340,7 @@ class Error(BaseError, Outgoing):
             "code": code
         }
         super(Error, self).__init__(
+            correlation_id,
             request_id,
             source,
             destination,
@@ -344,6 +361,7 @@ class Error(BaseError, Outgoing):
         """
 
         return cls(
+            correlation_id=request.correlation_id,
             request_id=request.request_id,
             source=request.destination,
             destination=request.reply_to,
@@ -359,11 +377,13 @@ class IncomingNotification(Message, Incoming):
     """
 
     def __init__(self,
+                 correlation_id,
                  request_id,
                  source,
                  context,
                  **payload):
         super(IncomingNotification, self).__init__(
+            correlation_id,
             request_id,
             "notification",
             entry_point.NullEntryPoint(),
@@ -380,11 +400,15 @@ class Notification(Message, Outgoing):
     """
 
     def __init__(self,
+                 correlation_id,
                  source,
                  context,
                  **payload):
+        if not correlation_id:
+            correlation_id = str(uuid.uuid4())
         request_id = uuid.uuid4().hex
         super(Notification, self).__init__(
+            correlation_id,
             request_id,
             "notification",
             entry_point.NullEntryPoint(),
@@ -463,8 +487,8 @@ class IncomingMessageFactory(object):
         elif message_type == "error":
             return self._get_error_cls()
 
-    def _create_request_call(self, payload, context, request_id, source,
-                             destination, reply_to):
+    def _create_request_call(self, payload, context, correlation_id,
+                             request_id, source, destination, reply_to):
         """
         Creates incoming request call object
 
@@ -481,15 +505,16 @@ class IncomingMessageFactory(object):
         :return: incoming request object
         :rtype: IncomingRequestCall
         """
-        return IncomingRequestCall(request_id,
+        return IncomingRequestCall(correlation_id,
+                                   request_id,
                                    reply_to,
                                    source,
                                    destination,
                                    context,
                                    **payload)
 
-    def _create_message(self, message_cls, payload, context, request_id,
-                        source, destination):
+    def _create_message(self, message_cls, payload, context, correlation_id,
+                        request_id, source, destination):
         """
         Creates incoming response call object
 
@@ -507,13 +532,15 @@ class IncomingMessageFactory(object):
         :rtype: messages.Message
         """
 
-        return message_cls(request_id,
+        return message_cls(correlation_id,
+                           request_id,
                            source,
                            destination,
                            context,
                            **payload)
 
-    def _create_error(self, payload, context, request_id, source, destination):
+    def _create_error(self, payload, context, correlation_id, request_id,
+                      source, destination):
         """
         Creates incoming error call object
 
@@ -529,11 +556,13 @@ class IncomingMessageFactory(object):
         :rtype: IncomingError
         """
 
-        err = IncomingError(request_id, source, destination, context,
+        err = IncomingError(correlation_id, request_id, source, destination,
+                            context,
                             **payload)
         return err
 
-    def create_nofification(self, payload, context, request_id, source):
+    def create_nofification(self, payload, context, correlation_id,
+                            request_id, source):
         """
         Creates incoming notification call object
 
@@ -546,7 +575,8 @@ class IncomingMessageFactory(object):
         :return: incoming notification object
         :rtype: IncomingNotification
         """
-        return IncomingNotification(request_id, source, context, **payload)
+        return IncomingNotification(correlation_id, request_id, source,
+                                    context, **payload)
 
     def create(self, amqp_message):
         """
@@ -572,17 +602,21 @@ class IncomingMessageFactory(object):
         context = body["context"]
         if issubclass(message_cls, IncomingRequestCall):
             return self._create_request_call(payload, context,
+                                             headers["correlation_id"],
                                              headers["request_id"],
                                              source, destination, reply_to)
         elif issubclass(message_cls, Error):
             return self._create_error(payload, context,
+                                      headers["correlation_id"],
                                       headers["request_id"], source,
                                       destination)
         elif issubclass(message_cls, IncomingNotification):
             return self.create_nofification(payload, context,
+                                            headers["correlation_id"],
                                             headers["request_id"], source)
         else:
             return self._create_message(message_cls,
                                         payload, context,
+                                        headers["correlation_id"],
                                         headers["request_id"],
                                         source, destination)

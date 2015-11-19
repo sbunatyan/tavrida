@@ -1,6 +1,6 @@
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 from tavrida import config
 from tavrida import discovery
@@ -23,6 +23,7 @@ class HelloController(service.ServiceController):
         print param
         print "----------------------------"
         proxy.test_world.world(param="proxy call").call()
+        proxy.test_world.world(param="proxy call").transfer(request)
         proxy.publish(param="hello publication")
         print "======"
 

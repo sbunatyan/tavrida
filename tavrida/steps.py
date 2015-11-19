@@ -7,8 +7,8 @@ import messages
 
 class ValidateMessageMiddleware(controller.AbstractController):
 
-    REQUIRED_HEADERS = ["message_id", "request_id", "message_type",
-                        "source", "destination"]
+    REQUIRED_HEADERS = ["correlation_id", "message_id", "request_id",
+                        "message_type", "source", "destination"]
     MESSAGE_TYPE = ["request", "response", "notification", "error"]
 
     def __init__(self):
