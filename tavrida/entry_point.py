@@ -92,7 +92,9 @@ class EntryPointFactory(object):
         return NullEntryPoint()
 
     def create(self, string, source=False, destination=False):
-        if "." in string:
+        if not string:
+            return self._create_null()
+        elif "." in string:
             parts = string.split(".")
             if source:
                 return self._create_source(*parts)
@@ -100,7 +102,5 @@ class EntryPointFactory(object):
                 return self._create_destination(*parts)
             else:
                 return self._create_entry_point(*parts)
-        elif string:
-            return self._create_service(string)
         else:
-            return self._create_null()
+            return self._create_service(string)

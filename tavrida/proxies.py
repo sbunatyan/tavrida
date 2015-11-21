@@ -1,4 +1,7 @@
+import copy
+
 import entry_point
+import exceptions
 import messages
 
 
@@ -9,14 +12,20 @@ class RCPCallProxy(object):
     """
 
     def __init__(self, postprocessor, service_name, method_name, source,
-                 context, correlation_id, kwargs):
+                 context, correlation_id, headers, kwargs):
         self._postprocessor = postprocessor
         self._service_name = service_name
         self._metohd_name = method_name
         self._source = source
         self._context = context
         self._correlation_id = correlation_id
+        self._headers = copy.copy(headers) or {}
         self._kwargs = kwargs
+
+    def _validate_headers(self, headers):
+        intersection = set(headers) & set(self._headers)
+        if intersection:
+            raise exceptions.ForbiddenHeaders(headers=str(intersection))
 
     def _make_request(self, context=None, correlation_id=None, reply_to=None,
                       source=None):
@@ -34,12 +43,15 @@ class RCPCallProxy(object):
 
         payload = self._kwargs
         dst = entry_point.Destination(self._service_name, self._metohd_name)
-        request = messages.Request(correlation_id=correlation_id,
-                                   reply_to=reply_to,
-                                   source=source,
-                                   destination=dst,
-                                   context=context,
-                                   **payload)
+        headers = {
+            "correlation_id": correlation_id,
+            "reply_to": str(reply_to),
+            "source": str(source),
+            "destination": str(dst)
+        }
+        self._validate_headers(headers)
+        headers.update(self._headers)
+        request = messages.Request(headers, context, payload)
         return request
 
     def call(self, correlation_id=None, context=None, reply_to=None,
@@ -78,45 +90,48 @@ class RCPCallProxy(object):
 class RPCMethodProxy(object):
 
     def __init__(self, postprocessor, service_name, method_name, source,
-                 context=None, correlation_id=None):
+                 context=None, correlation_id=None, headers=None):
         self._postprocessor = postprocessor
         self._service_name = service_name
         self._method_name = method_name
         self._source = source
         self._context = context
         self._correlation_id = correlation_id
+        self._headers = copy.copy(headers)
 
     def __call__(self, **kwargs):
         self._kwargs = kwargs
         return RCPCallProxy(self._postprocessor, self._service_name,
                             self._method_name, self._source, self._context,
-                            self._correlation_id, kwargs)
+                            self._correlation_id, self._headers, kwargs)
 
 
 class RPCServiceProxy(object):
 
     def __init__(self, postprocessor, name, source, context=None,
-                 correlation_id=None):
+                 correlation_id=None, headers=None):
         self._postprocessor = postprocessor
         self._name = name
         self._source = source
         self._context = context
         self._correlation_id = correlation_id
+        self._headers = copy.copy(headers)
 
     def __getattr__(self, item):
         return RPCMethodProxy(self._postprocessor, self._name, item,
                               self._source, self._context,
-                              self._correlation_id)
+                              self._correlation_id, self._headers)
 
 
 class RPCProxy(object):
 
     def __init__(self, postprocessor, source, context=None,
-                 correlation_id=None):
+                 correlation_id=None, headers=None):
         self._postprocessor = postprocessor
         self._source = source
         self._context = context
         self._correlation_id = correlation_id
+        self._headers = copy.copy(headers) or {}
 
     def _get_discovery_service(self):
         return self._postprocessor.discovery_service
@@ -127,10 +142,15 @@ class RPCProxy(object):
         return RPCServiceProxy(self._postprocessor, item, self._source,
                                self._context, self._correlation_id)
 
+    def add_headers(self, headers):
+        self._headers = copy.copy(headers)
+
     def publish(self, correlation_id=None, **kwargs):
-        publication = messages.Notification(
-            correlation_id=correlation_id or self._correlation_id,
-            source=self._source,
-            context=self._context,
-            **kwargs)
+        headers = {
+            "correlation_id": correlation_id or self._correlation_id,
+            "source": str(self._source)
+        }
+        self._validate_headers(headers)
+        headers.update(self._headers)
+        publication = messages.Notification(headers, self._context, kwargs)
         self._postprocessor.process(publication)

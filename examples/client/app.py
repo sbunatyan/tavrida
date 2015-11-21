@@ -9,10 +9,11 @@ conf = config.ConnectionConfig("localhost", credentials=creds)
 # You should always provide source !!!
 source = entry_point.Source("client", "method")
 
-cli = client.RPCClient(config=conf, service="test_hello",
-                       exchange="test_exchange", source=source)
-cli.hello(param=123).cast(correlation_id="123-456")
 
+cli = client.RPCClient(config=conf, service="test_hello",
+                       exchange="test_exchange", source=source,
+                       headers={"aaa": "bbb"})
+cli.hello(param=123).cast(correlation_id="123-456")
 
 # Or if you want to provide source as a string
 cli = client.RPCClient(config=conf, service="test_hello",

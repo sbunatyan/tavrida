@@ -145,3 +145,8 @@ class DuplicatedMethodRegistration(BaseException):
 
     _msg_template = "Duplicated registration of method '%(method_name)s'"
     _service_error_code = 1028
+
+
+class ForbiddenHeaders(BaseException):
+    _msg_template = "Headers are forbidden to re-define %(headers)s"
+    _service_error_code = 1029

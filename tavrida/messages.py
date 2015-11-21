@@ -1,4 +1,5 @@
 import anyjson
+import copy
 import logging
 import uuid
 
@@ -26,7 +27,7 @@ class AMQPMessage(object):
 
     def _validate_headers(self, headers):
         for field in self.REQUIRED_HEADERS:
-            if headers.get(field) is None:
+            if field not in headers:
                 raise exceptions.FieldMustExist(field=field)
         self._validate_message_type(headers["message_type"])
         self._validate_message_type(headers["message_type"])
@@ -85,44 +86,41 @@ class Message(object):
     """
 
     def __init__(self,
-                 correlation_id,
-                 request_id,
-                 message_type,
-                 reply_to,
-                 source,
-                 destination,
+                 headers,
                  context,
                  payload):
 
         super(Message, self).__init__()
-        if not isinstance(source, entry_point.EntryPoint):
+
+        if not headers.get("message_id"):
+            headers["message_id"] = uuid.uuid4().hex
+
+        self.correlation_id = headers.get("correlation_id")
+        self.request_id = headers.get("request_id")
+        self.message_id = headers.get("message_id")
+        self.message_type = headers.get("message_type")
+
+        self.reply_to = entry_point.EntryPointFactory().create(
+            headers.get("reply_to"))
+        self.source = entry_point.EntryPointFactory().create(
+            headers.get("source"), source=True)
+        self.destination = entry_point.EntryPointFactory().create(
+            headers.get("destination"), destination=True)
+
+        self._headers = copy.copy(headers)
+        self._context = context or {}
+        self._payload = payload
+
+        if not isinstance(self.source, entry_point.EntryPoint):
             raise TypeError('source must be EntryPoint')
 
         if not isinstance(payload, dict):
             raise TypeError('payload must be dict, received {}'
                             .format(type(payload)))
 
-        self.correlation_id = correlation_id
-        self.request_id = request_id
-        self.message_id = uuid.uuid4().hex
-        self.message_type = message_type
-        self.reply_to = reply_to
-        self.source = source
-        self.destination = destination
-        self._context = context or {}
-        self._payload = payload
-
     @property
     def headers(self):
-        return {
-            "correlation_id": self.correlation_id,
-            "request_id": self.request_id,
-            "message_id": self.message_id,
-            "message_type": self.message_type,
-            "reply_to": str(self.reply_to),
-            "source": str(self.source),
-            "destination": str(self.destination)
-        }
+        return self._headers
 
     @property
     def context(self):
@@ -156,24 +154,6 @@ class IncomingRequest(Message, Incoming):
     Incoming request object
     """
 
-    def __init__(self,
-                 correlation_id,
-                 request_id,
-                 reply_to,
-                 source,
-                 destination,
-                 context,
-                 **payload):
-        super(IncomingRequest, self).__init__(
-            correlation_id,
-            request_id,
-            "request",
-            reply_to,
-            source,
-            destination,
-            context,
-            payload)
-
 
 class IncomingRequestCall(IncomingRequest):
 
@@ -190,7 +170,7 @@ class IncomingRequestCall(IncomingRequest):
         :return: response object
         :rtype: messages.Response
         """
-        return Response.create_by_request(self, **payload)
+        return Response.create_by_request(self, payload)
 
 
 class IncomingRequestCast(IncomingRequest):
@@ -199,22 +179,6 @@ class IncomingRequestCast(IncomingRequest):
     Incoming cast request object
     """
 
-    def __init__(self,
-                 correlation_id,
-                 request_id,
-                 source,
-                 destination,
-                 context,
-                 **payload):
-        super(IncomingRequestCast, self).__init__(
-            correlation_id,
-            request_id,
-            entry_point.NullEntryPoint(),
-            source,
-            destination,
-            context,
-            **payload)
-
 
 class Request(Message, Outgoing):
 
@@ -222,31 +186,17 @@ class Request(Message, Outgoing):
     Outgoing request object
     """
 
-    def __init__(self,
-                 correlation_id,
-                 reply_to,
-                 source,
-                 destination,
-                 context,
-                 **payload):
-        if not correlation_id:
-            correlation_id = str(uuid.uuid4())
-        request_id = uuid.uuid4().hex
-        super(Request, self).__init__(
-            correlation_id,
-            request_id,
-            "request",
-            reply_to,
-            source,
-            destination,
-            context,
-            payload)
+    def __init__(self, headers, context, payload):
+        headers = copy.copy(headers)
+        if not headers["correlation_id"]:
+            headers["correlation_id"] = str(uuid.uuid4())
+        headers["request_id"] = uuid.uuid4().hex
+        headers["message_type"] = "request"
+        super(Request, self).__init__(headers, context, payload)
 
     @classmethod
-    def create_transfer(cls, correlation_id, reply_to, source,
-                        destination, **payload):
-
-        req = cls(correlation_id, reply_to, source, destination, **payload)
+    def create_transfer(cls, headers, context, **payload):
+        req = cls(headers, context, payload)
         return req
 
 
@@ -256,23 +206,11 @@ class BaseResponse(Message):
     Base response object
     """
 
-    def __init__(self,
-                 correlation_id,
-                 request_id,
-                 source,
-                 destination,
-                 context,
-                 **payload):
-
-        super(BaseResponse, self).__init__(
-            correlation_id,
-            request_id,
-            "response",
-            entry_point.NullEntryPoint(),
-            source,
-            destination,
-            context,
-            payload)
+    def __init__(self, headers, context, payload):
+        headers = copy.copy(headers)
+        headers["reply_to"] = None
+        headers["message_type"] = "response"
+        super(BaseResponse, self).__init__(headers, context, payload)
 
 
 class IncomingResponse(BaseResponse, Incoming):
@@ -290,7 +228,7 @@ class Response(BaseResponse, Outgoing):
     """
 
     @classmethod
-    def create_by_request(cls, request, **payload):
+    def create_by_request(cls, request, payload):
 
         """
         Create response to request
@@ -302,15 +240,14 @@ class Response(BaseResponse, Outgoing):
         :return: response object
         :rtype: messages.Response
         """
+        headers = {
+            "correlation_id": request.correlation_id,
+            "request_id": request.request_id,
+            "source": str(request.destination),
+            "destination": str(request.reply_to),
+        }
 
-        return cls(
-            correlation_id=request.correlation_id,
-            request_id=request.request_id,
-            source=request.destination,
-            destination=request.reply_to,
-            context=request.context,
-            **payload
-        )
+        return cls(headers, request.context, payload)
 
 
 class BaseError(Message):
@@ -319,23 +256,11 @@ class BaseError(Message):
     Base error message
     """
 
-    def __init__(self,
-                 correlation_id,
-                 request_id,
-                 source,
-                 destination,
-                 context,
-                 **payload):
-
-        super(BaseError, self).__init__(
-            correlation_id,
-            request_id,
-            "error",
-            entry_point.NullEntryPoint(),
-            source,
-            destination,
-            context,
-            payload)
+    def __init__(self, headers, context, payload):
+        headers = copy.copy(headers)
+        headers["reply_to"] = None
+        headers["message_type"] = "error"
+        super(BaseError, self).__init__(headers, context, payload)
 
 
 class IncomingError(BaseError, Incoming):
@@ -352,13 +277,7 @@ class Error(BaseError, Outgoing):
     Outgoing error message
     """
 
-    def __init__(self,
-                 correlation_id,
-                 request_id,
-                 source,
-                 destination,
-                 context,
-                 exception):
+    def __init__(self, headers, context, exception):
 
         try:
             code = exception.code
@@ -370,13 +289,7 @@ class Error(BaseError, Outgoing):
             "message": str(exception),
             "code": code
         }
-        super(Error, self).__init__(
-            correlation_id,
-            request_id,
-            source,
-            destination,
-            context,
-            **payload)
+        super(Error, self).__init__(headers, context, payload)
 
     @classmethod
     def create_by_request(cls, request, exception):
@@ -390,15 +303,14 @@ class Error(BaseError, Outgoing):
         :return: response object
         :rtype: messages.Response
         """
+        headers = {
+            "correlation_id": request.correlation_id,
+            "request_id": request.request_id,
+            "source": str(request.destination),
+            "destination": str(request.reply_to),
+        }
 
-        return cls(
-            correlation_id=request.correlation_id,
-            request_id=request.request_id,
-            source=request.destination,
-            destination=request.reply_to,
-            context=request.context,
-            exception=exception
-        )
+        return cls(headers, request.context, exception)
 
 
 class IncomingNotification(Message, Incoming):
@@ -407,21 +319,12 @@ class IncomingNotification(Message, Incoming):
     Incoming notification message
     """
 
-    def __init__(self,
-                 correlation_id,
-                 request_id,
-                 source,
-                 context,
-                 **payload):
-        super(IncomingNotification, self).__init__(
-            correlation_id,
-            request_id,
-            "notification",
-            entry_point.NullEntryPoint(),
-            source,
-            entry_point.NullEntryPoint(),
-            context,
-            payload)
+    def __init__(self, headers, context, payload):
+        headers = copy.copy(headers)
+        headers["reply_to"] = None
+        headers["destination"] = None
+        headers["message_type"] = "notification"
+        super(IncomingNotification, self).__init__(headers, context, payload)
 
 
 class Notification(Message, Outgoing):
@@ -430,23 +333,17 @@ class Notification(Message, Outgoing):
     Outgoing notification message
     """
 
-    def __init__(self,
-                 correlation_id,
-                 source,
-                 context,
-                 **payload):
-        if not correlation_id:
-            correlation_id = str(uuid.uuid4())
-        request_id = uuid.uuid4().hex
-        super(Notification, self).__init__(
-            correlation_id,
-            request_id,
-            "notification",
-            entry_point.NullEntryPoint(),
-            source,
-            entry_point.NullEntryPoint(),
-            context,
-            payload)
+    def __init__(self, headers, context, payload):
+        headers = copy.copy(headers)
+        headers["reply_to"] = None
+        headers["destination"] = None
+        headers["message_type"] = "notification"
+        headers["request_id"] = uuid.uuid4().hex
+
+        if not headers["correlation_id"]:
+            headers["correlation_id"] = str(uuid.uuid4())
+
+        super(Notification, self).__init__(headers, context, payload)
 
 
 class IncomingMessageFactory(object):
@@ -518,96 +415,68 @@ class IncomingMessageFactory(object):
         elif message_type == "error":
             return self._get_error_cls()
 
-    def _create_request_call(self, payload, context, correlation_id,
-                             request_id, source, destination, reply_to):
+    def _create_request_call(self, headers, context, payload):
         """
         Creates incoming request call object
 
+        :param headers: headers
+        :type headers: dict
+        :param context: headers
+        :type context: dict
         :param payload: message payload
         :type payload: dict
-        :param request_id: request ID
-        :type request_id: string
-        :param source: message source
-        :type source: entry_point.Source
-        :param destination: message destination
-        :type destination: entry_point.Destination
-        :param reply_to: message entry point to reply to
-        :type reply_to: entry_point.EntryPoint
         :return: incoming request object
         :rtype: IncomingRequestCall
         """
-        return IncomingRequestCall(correlation_id,
-                                   request_id,
-                                   reply_to,
-                                   source,
-                                   destination,
-                                   context,
-                                   **payload)
+        return IncomingRequestCall(headers, context, payload)
 
-    def _create_message(self, message_cls, payload, context, correlation_id,
-                        request_id, source, destination):
+    def _create_message(self, message_cls, headers, context, payload):
         """
         Creates incoming response call object
 
-        :param message_cls: message class
-        :type message_cls: messages.Message
+        :param headers: headers
+        :type headers: dict
+        :param context: headers
+        :type context: dict
         :param payload: message payload
         :type payload: dict
-        :param request_id: request ID
-        :type request_id: string
-        :param source: message source
-        :type source: entry_point.Source
-        :param destination: message destination
-        :type destination: entry_point.Destination
         :return: message_cls
         :rtype: messages.Message
         """
 
-        return message_cls(correlation_id,
-                           request_id,
-                           source,
-                           destination,
-                           context,
-                           **payload)
+        return message_cls(headers, context, payload)
 
-    def _create_error(self, payload, context, correlation_id, request_id,
-                      source, destination):
+    def _create_error(self, headers, context, payload):
         """
         Creates incoming error call object
 
+        :param headers: headers
+        :type headers: dict
+        :param context: headers
+        :type context: dict
         :param payload: message payload
         :type payload: dict
-        :param request_id: request ID
-        :type request_id: string
-        :param source: message source
-        :type source: entry_point.Source
-        :param destination: message destination
-        :type destination: entry_point.Destination
         :return: incoming error object
         :rtype: IncomingError
         """
 
-        err = IncomingError(correlation_id, request_id, source, destination,
-                            context,
-                            **payload)
+        err = IncomingError(headers, context, payload)
         return err
 
-    def create_nofification(self, payload, context, correlation_id,
-                            request_id, source):
+    def create_notification(self, headers, context, payload):
         """
         Creates incoming notification call object
 
+        :param headers: headers
+        :type headers: dict
+        :param context: headers
+        :type context: dict
         :param payload: message payload
         :type payload: dict
-        :param request_id: request ID
-        :type request_id: string
-        :param source: message source
-        :type source: entry_point.Source
         :return: incoming notification object
         :rtype: IncomingNotification
         """
-        return IncomingNotification(correlation_id, request_id, source,
-                                    context, **payload)
+        return IncomingNotification(headers, context, payload)
 
     def create(self, amqp_message):
         """
@@ -620,34 +489,18 @@ class IncomingMessageFactory(object):
         """
 
         headers = amqp_message.headers
-        destination = entry_point.EntryPointFactory().create(
-            headers["destination"], destination=True)
         reply_to = entry_point.EntryPointFactory().create(
             headers["reply_to"])
-        source = entry_point.EntryPointFactory().create(headers["source"],
-                                                        source=True)
 
         message_cls = self.get_class(headers["message_type"], reply_to)
         body = amqp_message.body_deserialize()
         payload = body["payload"]
         context = body["context"]
         if issubclass(message_cls, IncomingRequestCall):
-            return self._create_request_call(payload, context,
-                                             headers["correlation_id"],
-                                             headers["request_id"],
-                                             source, destination, reply_to)
+            return self._create_request_call(headers, context, payload)
         elif issubclass(message_cls, Error):
-            return self._create_error(payload, context,
-                                      headers["correlation_id"],
-                                      headers["request_id"], source,
-                                      destination)
+            return self._create_error(headers, context, payload)
         elif issubclass(message_cls, IncomingNotification):
-            return self.create_nofification(payload, context,
-                                            headers["correlation_id"],
-                                            headers["request_id"], source)
+            return self.create_notification(headers, context, payload)
         else:
-            return self._create_message(message_cls,
-                                        payload, context,
-                                        headers["correlation_id"],
-                                        headers["request_id"],
-                                        source, destination)
+            return self._create_message(message_cls, headers, context, payload)
