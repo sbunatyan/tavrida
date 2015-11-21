@@ -13,7 +13,8 @@ class ServiceController(controller.AbstractController):
     _dispatcher = None
     _subscription = None
 
-    def __init__(self, postprocessor):
+    def __init__(self, preprocessor, postprocessor):
+        self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
     @classmethod

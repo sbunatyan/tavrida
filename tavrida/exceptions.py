@@ -122,12 +122,6 @@ class DuplicatedEntryPointRegistration(BaseAckableException):
     _service_error_code = 1024
 
 
-class ServicesNotInstantiated(BaseAckableException):
-
-    _msg_template = "Services are not instantiated"
-    _service_error_code = 1025
-
-
 class ServiceIsNotRegister(BaseAckableException):
 
     _msg_template = "Service %(service)s is not registered"

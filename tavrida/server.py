@@ -114,8 +114,6 @@ class Server(object):
                                            discovery_service)
 
     def _get_preprocessor(self):
-        if not self._services:
-            raise exceptions.ServicesNotInstantiated
         processor_instance = self._get_processor(self._services)
         postprocessor_instance = self._get_postprocessor()
         return preprocessor.PreProcessor(processor_instance,
@@ -123,9 +121,10 @@ class Server(object):
 
     def _instantiate_services(self):
         postproc = self._get_postprocessor()
+        preproc = self._get_preprocessor()
         for s in self._service_list:
             self.log.info("Service %s", s.__name__)
-            self._services.append(s(postproc))
+            self._services.append(s(preproc, postproc))
 
     def run(self):
         self.log.info("Instantiating service classes")
