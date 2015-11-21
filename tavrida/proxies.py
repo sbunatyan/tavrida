@@ -29,16 +29,16 @@ class RCPCallProxy(object):
 
     def _make_request(self, context=None, correlation_id=None, reply_to=None,
                       source=None):
-        if not source:
+        if source is None:
             source = self._source
 
-        if not reply_to:
+        if reply_to is None:
             reply_to = source
 
-        if not context:
+        if context is None:
             context = self._context
 
-        if not correlation_id:
+        if correlation_id is None:
             correlation_id = self._correlation_id
 
         payload = self._kwargs
