@@ -73,7 +73,7 @@ class WrongEntryPointFormat(BaseAckableException):
     _service_error_code = 1006
 
 
-class UnableToDiscover(BaseException):
+class UnableToDiscover(BaseAckableException):
 
     _msg_template = "Service %(service)s could not be discovered"
     _service_error_code = 1007
