@@ -121,11 +121,10 @@ class Server(object):
                                          postprocessor_instance)
 
     def _instantiate_services(self):
-        postproc = self._get_postprocessor()
         preproc = self._get_preprocessor()
         for s in self._service_list:
             self.log.info("Service %s", s.__name__)
-            self._services.append(s(preproc, postproc))
+            self._services.append(s(preproc, preproc.postprocessor))
 
     def run(self):
         self.log.info("Instantiating service classes")

@@ -28,6 +28,14 @@ class PreProcessor(controller.AbstractController, utils.Singleton):
         self._processor = processor
         self._postprocessor = postprocessor
 
+    @property
+    def processor(self):
+        return self._processor
+
+    @property
+    def postprocessor(self):
+        return self._postprocessor
+
     def add_middleware(self, middleware):
         """
         Append middleware controller
