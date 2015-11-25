@@ -11,10 +11,10 @@ from tavrida import messages
 class Reader(base.AbstractReader):
 
     def __init__(self, config, queue, preprocessor):
-        self.log = logging.getLogger(__name__)
+        super(Reader, self).__init__(config)
         self._config = config.to_pika_params()
+        self.log = logging.getLogger(__name__)
         self._queue = queue
-        self._connection = None
         self._channel = None
         self.preprocessor = preprocessor
 
@@ -32,7 +32,9 @@ class Reader(base.AbstractReader):
                 pika.exceptions.AMQPConnectionError) as e:
             self.log.error(e)
             time.sleep(self._config.retry_delay)
-            self.run()
+            if self._if_do_retry():
+                self._current_reconnect_attempt += 1
+                self.run()
 
     def _on_message(self, msg, frame):
         try:
@@ -67,9 +69,9 @@ class Reader(base.AbstractReader):
 class Writer(base.AbstractWriter):
 
     def __init__(self, config):
-        self.log = logging.getLogger(__name__)
+        super(Writer, self).__init__(config)
         self._config = config.to_pika_params()
-        self._connection = None
+        self.log = logging.getLogger(__name__)
         self._channel = None
 
     def connect(self):
@@ -78,9 +80,13 @@ class Writer(base.AbstractWriter):
             self._channel = self._connection.channel()
         except (pika.exceptions.ConnectionClosed,
                 pika.exceptions.AMQPConnectionError) as e:
-            self.log.error(e)
-            time.sleep(self._config.retry_delay)
-            self.connect()
+            if self._if_do_retry():
+                self._current_reconnect_attempt += 1
+                self.log.error(e)
+                time.sleep(self._config.retry_delay)
+                self.connect()
+            else:
+                raise
 
     def close_connection(self):
         self._channel.close()

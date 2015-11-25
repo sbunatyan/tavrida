@@ -1,3 +1,4 @@
+import copy
 import pika
 
 
@@ -16,7 +17,8 @@ class ConnectionConfig(object):
                  frame_max=None, heartbeat_interval=None, ssl=None,
                  ssl_options=None, connection_attempts=3,
                  retry_delay=1.0, socket_timeout=3.0,
-                 locale=None, backpressure_detection=None):
+                 locale=None, backpressure_detection=None,
+                 reconnect_attempts=-1):
         super(ConnectionConfig, self).__init__()
         self.host = host
         self.port = port
@@ -32,12 +34,14 @@ class ConnectionConfig(object):
         self.socket_timeout = socket_timeout
         self.locale = locale
         self.backpressure_detection = backpressure_detection
+        self.reconnect_attempts = reconnect_attempts  # value <0 means infinite
 
     def to_dict(self):
-        return self.__dict__
+        return copy.copy(self.__dict__)
 
     def to_pika_params(self):
         params = self.to_dict()
         params["credentials"] = pika.PlainCredentials(
             self.credentials.username, self.credentials.password)
+        del params["reconnect_attempts"]
         return pika.ConnectionParameters(**params)
