@@ -7,6 +7,7 @@ import proxies
 class Subscription(controller.AbstractController):
 
     def __init__(self):
+        super(Subscription, self).__init__()
         self._subscriptions = {}
 
     @property

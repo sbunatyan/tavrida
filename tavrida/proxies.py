@@ -13,6 +13,7 @@ class RCPCallProxy(object):
 
     def __init__(self, postprocessor, service_name, method_name, source,
                  context, correlation_id, headers, kwargs):
+        super(RCPCallProxy, self).__init__()
         self._postprocessor = postprocessor
         self._service_name = service_name
         self._metohd_name = method_name

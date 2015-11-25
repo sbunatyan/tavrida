@@ -11,6 +11,7 @@ class RPCClient(object):
 
     def __init__(self, config, service, exchange=None, source="",
                  discovery=None, headers=None):
+        super(RPCClient, self).__init__()
         self._config = config
         self._service = service
         self._exchange = exchange

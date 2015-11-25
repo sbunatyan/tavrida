@@ -23,6 +23,7 @@ class PreProcessor(controller.AbstractController, utils.Singleton):
     ]
 
     def __init__(self, processor, postprocessor):
+        super(PreProcessor, self).__init__()
         self.log = logging.getLogger(__name__)
         self._processor = processor
         self._postprocessor = postprocessor

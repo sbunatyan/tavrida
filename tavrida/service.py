@@ -14,6 +14,7 @@ class ServiceController(controller.AbstractController):
     _subscription = None
 
     def __init__(self, preprocessor, postprocessor):
+        super(ServiceController, self).__init__()
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 

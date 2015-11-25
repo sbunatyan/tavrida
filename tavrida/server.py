@@ -16,6 +16,7 @@ class Server(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, config, queue_name, exchange_name, service_list):
+        super(Server, self).__init__()
         self.log = logging.getLogger(__name__)
         self._config = config
         self._service_list = (service_list if isinstance(service_list, list)

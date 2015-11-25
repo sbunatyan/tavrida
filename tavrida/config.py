@@ -4,6 +4,7 @@ import pika
 class Credentials(object):
 
     def __init__(self, username, password):
+        super(Credentials, self).__init__()
         self.username = username
         self.password = password
 
@@ -16,20 +17,21 @@ class ConnectionConfig(object):
                  ssl_options=None, connection_attempts=3,
                  retry_delay=1.0, socket_timeout=3.0,
                  locale=None, backpressure_detection=None):
-            self.host = host
-            self.port = port
-            self.virtual_host = virtual_host
-            self.credentials = credentials
-            self.channel_max = channel_max
-            self.frame_max = frame_max
-            self.heartbeat_interval = heartbeat_interval
-            self.ssl = ssl
-            self.ssl_options = ssl_options
-            self.connection_attempts = connection_attempts
-            self.retry_delay = retry_delay
-            self.socket_timeout = socket_timeout
-            self.locale = locale
-            self.backpressure_detection = backpressure_detection
+        super(ConnectionConfig, self).__init__()
+        self.host = host
+        self.port = port
+        self.virtual_host = virtual_host
+        self.credentials = credentials
+        self.channel_max = channel_max
+        self.frame_max = frame_max
+        self.heartbeat_interval = heartbeat_interval
+        self.ssl = ssl
+        self.ssl_options = ssl_options
+        self.connection_attempts = connection_attempts
+        self.retry_delay = retry_delay
+        self.socket_timeout = socket_timeout
+        self.locale = locale
+        self.backpressure_detection = backpressure_detection
 
     def to_dict(self):
         return self.__dict__

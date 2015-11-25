@@ -21,6 +21,7 @@ class PostProcessor(controller.AbstractController, utils.Singleton):
     _middlewares = []
 
     def __init__(self, writer, discovery):
+        super(PostProcessor, self).__init__()
         self.log = logging.getLogger(__name__)
         self._writer = writer
         self._discovery = discovery
