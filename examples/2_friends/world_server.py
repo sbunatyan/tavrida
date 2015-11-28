@@ -10,7 +10,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-
 @dispatcher.rpc_service("test_world")
 class WorldController(service.ServiceController):
 
@@ -23,8 +22,15 @@ class WorldController(service.ServiceController):
         print "---------------------------"
         return {"param": "world response"}
 
+    @dispatcher.rpc_method(service="test_world", method="world2")
+    def world2(self, request, proxy, param):
+        print "---- request to world 2 ------"
+        print request.context
+        print request.headers
+        print param
+        print "---------------------------"
 
-    @dispatcher.rpc_error_method(service="test_world",
+    @dispatcher.rpc_error_method(service="test_hello",
                                  method="hello_with_error")
     def hello_error(self, error, proxy):
         # Handles hello_with_error.hello errors
@@ -41,6 +47,7 @@ class WorldController(service.ServiceController):
         print notification.headers
         print param
         print "---------------------------"
+        proxy.test_hello.hello_with_error(param="555").call()
 
 
 disc = discovery.LocalDiscovery()

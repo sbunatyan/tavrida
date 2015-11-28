@@ -13,7 +13,7 @@ from tavrida import service
 class HelloController(service.ServiceController):
 
     @dispatcher.rpc_method(service="test_hello", method="hello")
-    def hello(self, request, proxy, param):
+    def hello1(self, request, proxy, param):
         # Handles test_hello.hello requests, then send request to
         # test_world.world method and published notification
         #
@@ -22,8 +22,8 @@ class HelloController(service.ServiceController):
         print request.headers
         print param
         print "----------------------------"
-        proxy.test_world.world(param="proxy call").call()
-        proxy.test_world.world(param="proxy call").transfer(request)
+        proxy.test_world.world(param="proxy call - 1").call()
+        proxy.test_world.world(param="proxy call - 2").transfer(request)
         proxy.publish(param="hello publication")
         print "======"
 
@@ -45,6 +45,7 @@ class HelloController(service.ServiceController):
         print response.headers
         print param
         print "--------------------------------------"
+        proxy.test_world.world2(param="proxy call - 3").call()
 
 
 disc = discovery.LocalDiscovery()
