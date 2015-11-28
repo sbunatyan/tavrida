@@ -24,7 +24,7 @@ class RCPCallProxy(ValidateMixin):
         super(RCPCallProxy, self).__init__()
         self._postprocessor = postprocessor
         self._service_name = service_name
-        self._metohd_name = method_name
+        self._method_name = method_name
         self._source = source
         self._context = context
         self._correlation_id = correlation_id
@@ -46,7 +46,7 @@ class RCPCallProxy(ValidateMixin):
             correlation_id = self._correlation_id
 
         payload = self._kwargs
-        dst = entry_point.Destination(self._service_name, self._metohd_name)
+        dst = entry_point.Destination(self._service_name, self._method_name)
         headers = {
             "correlation_id": correlation_id,
             "reply_to": str(reply_to),

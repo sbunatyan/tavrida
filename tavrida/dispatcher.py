@@ -1,7 +1,8 @@
+import functools
+
 import controller
 import entry_point
 import exceptions
-import functools
 import messages
 import proxies
 import router
@@ -21,7 +22,6 @@ class Dispatcher(controller.AbstractController):
             "request": {},
             "response": {},
             "error": {},
-            "notification": {}
         }
 
     @property
@@ -58,7 +58,7 @@ class Dispatcher(controller.AbstractController):
         :return:name of handler method
         :rtype: string
         """
-        if not message_type in self._handlers or \
+        if message_type not in self._handlers or \
            ep.method not in self._handlers[message_type]:
             raise exceptions.HandlerNotFound(entry_point=str(ep),
                                              message_type=message_type)
@@ -76,8 +76,7 @@ class Dispatcher(controller.AbstractController):
         :rtype: EntryPoint
         """
         if isinstance(message, (messages.IncomingError,
-                                messages.IncomingResponse,
-                                messages.IncomingNotification)):
+                                messages.IncomingResponse)):
             return message.source
         else:
             return message.destination
@@ -88,7 +87,7 @@ class Dispatcher(controller.AbstractController):
 
         :param service_instance: Service controller instance
         :type service_instance: service.ServiceController
-        :param ep: EntryPoint
+        :param ep: Source entry point
         :type ep: entry_point.EntryPoint (or it's descendants)
         :param context: message context
         :type context: dict
@@ -135,9 +134,6 @@ def rpc_service(service_name):
         if not issubclass(cls, service.ServiceController):
             raise exceptions.NeedToBeController(service=str(cls))
 
-        # register service in router to define message controller class
-        router.Router().register(service_name, cls)
-
         for method_name in dir(cls):
             method = getattr(cls, method_name)
 
@@ -147,6 +143,10 @@ def rpc_service(service_name):
                     and hasattr(method, "_method_type"):
 
                 if method._method_type != "notification":
+
+                    # register service in router to define message controller
+                    # class
+                    router.Router().register(method._service_name, cls)
                     ep = entry_point.EntryPoint(method._service_name,
                                                 method._method_name)
                     cls.get_dispatcher().register(ep,
@@ -160,7 +160,8 @@ def rpc_service(service_name):
                                                           cls)
                     ep = entry_point.EntryPoint(method._service_name,
                                                 method._method_name)
-                    cls.get_subscription().subscribe(ep, method_name)
+                    cls.get_subscription().subscribe(
+                        ep, entry_point.Source(service_name, method_name))
         return cls
     return decorator
 
