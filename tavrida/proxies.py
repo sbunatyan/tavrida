@@ -5,7 +5,15 @@ import exceptions
 import messages
 
 
-class RCPCallProxy(object):
+class ValidateMixin(object):
+
+    def _validate_headers(self, headers):
+        intersection = set(headers) & set(self._headers)
+        if intersection:
+            raise exceptions.ForbiddenHeaders(headers=str(intersection))
+
+
+class RCPCallProxy(ValidateMixin):
 
     """
     Proxy class for method call
@@ -22,11 +30,6 @@ class RCPCallProxy(object):
         self._correlation_id = correlation_id
         self._headers = copy.copy(headers) or {}
         self._kwargs = kwargs
-
-    def _validate_headers(self, headers):
-        intersection = set(headers) & set(self._headers)
-        if intersection:
-            raise exceptions.ForbiddenHeaders(headers=str(intersection))
 
     def _make_request(self, context=None, correlation_id=None, reply_to=None,
                       source=None):
@@ -124,7 +127,7 @@ class RPCServiceProxy(object):
                               self._correlation_id, self._headers)
 
 
-class RPCProxy(object):
+class RPCProxy(ValidateMixin):
 
     def __init__(self, postprocessor, source, context=None,
                  correlation_id=None, headers=None):
