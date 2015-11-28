@@ -18,7 +18,7 @@ class Subscription(controller.AbstractController):
         self._subscriptions[remote_ep.method] = method_name
 
     def get_publisher(self, method_name):
-        for ep_method, method in self._subscriptions:
+        for ep_method, method in self._subscriptions.iteritems():
             if method == method_name:
                 return ep_method
         raise exceptions.PublisherEndpointNotFound(method_name=method_name)
