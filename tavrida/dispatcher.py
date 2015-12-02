@@ -81,7 +81,7 @@ class Dispatcher(controller.AbstractController):
         else:
             return message.destination
 
-    def _create_rpc_proxy(self, service_instance, ep, context, correlation_id):
+    def _create_rpc_proxy(self, service_instance, message):
         """
         Create RPC proxy to provide it to handler
 
@@ -89,15 +89,16 @@ class Dispatcher(controller.AbstractController):
         :type service_instance: service.ServiceController
         :param ep: Source entry point
         :type ep: entry_point.EntryPoint (or it's descendants)
-        :param context: message context
-        :type context: dict
-        :param correlation_id: correlation id
-        :type correlation_id: string
+        :param message: message
+        :type message: messages.Message
         :return: RPCProxy to implement requests
         :rtype: proxies.RPCProxy
         """
-        return proxies.RPCProxy(service_instance.postprocessor, ep, context,
-                                correlation_id)
+        return proxies.RPCProxy(postprocessor=service_instance.postprocessor,
+                                source=message.destination,
+                                context=message.context,
+                                correlation_id=message.correlation_id,
+                                headers=message.headers)
 
     def process(self, message, service_instance):
         """
@@ -113,9 +114,7 @@ class Dispatcher(controller.AbstractController):
         """
         ep = self._get_dispatching_entry_point(message)
         method_name = self.get_handler(ep, message.type)
-        proxy = self._create_rpc_proxy(service_instance,
-                                       message.destination, message.context,
-                                       message.correlation_id)
+        proxy = self._create_rpc_proxy(service_instance, message)
         return service_instance.process(method_name, message, proxy)
 
 

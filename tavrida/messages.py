@@ -246,8 +246,9 @@ class Response(BaseResponse, Outgoing):
             "source": str(request.destination),
             "destination": str(request.reply_to),
         }
-
-        return cls(headers, request.context, payload)
+        request_headers = request.headers.copy()
+        request_headers.update(headers)
+        return cls(request_headers, request.context, payload)
 
 
 class BaseError(Message):
@@ -309,8 +310,9 @@ class Error(BaseError, Outgoing):
             "source": str(request.destination),
             "destination": str(request.reply_to),
         }
-
-        return cls(headers, request.context, exception)
+        request_headers = request.headers.copy()
+        request_headers.update(headers)
+        return cls(request_headers, request.context, exception)
 
 
 class IncomingNotification(Message, Incoming):

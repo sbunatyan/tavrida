@@ -65,8 +65,7 @@ class Subscription(controller.AbstractController):
         ep = self._get_subscription_entry_point(message)
         local_ep = self.get_handler(ep)
         proxy = self._create_rpc_proxy(service_instance,
-                                       local_ep, message.context,
-                                       message.correlation_id)
+                                       local_ep, message)
         return service_instance.process(local_ep.method, message, proxy)
 
     def get_handler(self, ep):
@@ -76,6 +75,9 @@ class Subscription(controller.AbstractController):
         local_ep = self._subscriptions[ep.method]
         return local_ep
 
-    def _create_rpc_proxy(self, service_instance, ep, context, correlation_id):
-        return proxies.RPCProxy(service_instance.postprocessor, ep,
-                                context, correlation_id)
+    def _create_rpc_proxy(self, service_instance, ep, message):
+        return proxies.RPCProxy(postprocessor=service_instance.postprocessor,
+                                source=ep,
+                                context=message.context,
+                                correlation_id=message.correlation_id,
+                                headers=message.headers)

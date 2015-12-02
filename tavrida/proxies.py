@@ -1,19 +1,10 @@
 import copy
 
 import entry_point
-import exceptions
 import messages
 
 
-class ValidateMixin(object):
-
-    def _validate_headers(self, headers):
-        intersection = set(headers) & set(self._headers)
-        if intersection:
-            raise exceptions.ForbiddenHeaders(headers=str(intersection))
-
-
-class RCPCallProxy(ValidateMixin):
+class RCPCallProxy(object):
 
     """
     Proxy class for method call
@@ -53,9 +44,10 @@ class RCPCallProxy(ValidateMixin):
             "source": str(source),
             "destination": str(dst)
         }
-        self._validate_headers(headers)
-        headers.update(self._headers)
-        request = messages.Request(headers, context, payload)
+
+        request_headers = self._headers.copy()
+        request_headers.update(headers)
+        request = messages.Request(request_headers, context, payload)
         return request
 
     def call(self, correlation_id=None, context=None, reply_to=None,
@@ -127,7 +119,7 @@ class RPCServiceProxy(object):
                               self._correlation_id, self._headers)
 
 
-class RPCProxy(ValidateMixin):
+class RPCProxy(object):
 
     def __init__(self, postprocessor, source, context=None,
                  correlation_id=None, headers=None):
@@ -154,7 +146,8 @@ class RPCProxy(ValidateMixin):
             "correlation_id": correlation_id or self._correlation_id,
             "source": str(self._source)
         }
-        self._validate_headers(headers)
-        headers.update(self._headers)
-        publication = messages.Notification(headers, self._context, kwargs)
+        notification_headers = self._headers.copy()
+        notification_headers.update(headers)
+        publication = messages.Notification(notification_headers,
+                                            self._context, kwargs)
         self._postprocessor.process(publication)
