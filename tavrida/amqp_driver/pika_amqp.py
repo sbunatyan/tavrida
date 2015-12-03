@@ -1,3 +1,4 @@
+import abc
 import logging
 import time
 
@@ -8,7 +9,23 @@ from tavrida import exceptions
 from tavrida import messages
 
 
-class Reader(base.AbstractReader):
+class PikaClient(base.AbstractClient):
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, config):
+        super(PikaClient, self).__init__(config)
+        self._connection = None
+        self._channel = None
+
+    def close_connection(self):
+        if self._channel:
+            self._channel.close()
+        if self._connection:
+            self._connection.close()
+
+
+class Reader(PikaClient):
 
     def __init__(self, config, queue, preprocessor):
         super(Reader, self).__init__(config)
@@ -50,10 +67,6 @@ class Reader(base.AbstractReader):
         else:
             self._channel.basic_ack(frame.delivery_tag)
 
-    def close_connection(self):
-        self._channel.close()
-        self._connection.close()
-
     def stop(self):
         self.close_connection()
 
@@ -66,7 +79,7 @@ class Reader(base.AbstractReader):
                                  routing_key=routing_key)
 
 
-class Writer(base.AbstractWriter):
+class Writer(PikaClient):
 
     def __init__(self, config):
         super(Writer, self).__init__(config)
@@ -87,10 +100,6 @@ class Writer(base.AbstractWriter):
                 self.connect()
             else:
                 raise
-
-    def close_connection(self):
-        self._channel.close()
-        self._connection.close()
 
     def publish_message(self, exchange, routing_key, message):
         props = pika.BasicProperties(headers=message.headers)

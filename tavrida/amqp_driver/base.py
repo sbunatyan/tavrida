@@ -9,7 +9,6 @@ class AbstractClient(object):
         super(AbstractClient, self).__init__()
         self._reconnect_attempts = config.reconnect_attempts
         self._current_reconnect_attempt = 0
-        self._connection = None
 
     def _if_do_retry(self):
         return (self._reconnect_attempts < 0 or
