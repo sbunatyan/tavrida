@@ -25,7 +25,7 @@ class PikaClient(base.AbstractClient):
             self._connection.close()
 
 
-class Reader(PikaClient):
+class Reader(PikaClient, base.AbstractReader):
 
     def __init__(self, config, queue, preprocessor):
         super(Reader, self).__init__(config)
@@ -71,15 +71,23 @@ class Reader(PikaClient):
         self.close_connection()
 
     def create_queue(self):
-        self._channel.queue_declare(queue=self._queue, durable=True)
+        self.connect()
+        try:
+            self._channel.queue_declare(queue=self._queue, durable=True)
+        finally:
+            self.close_connection()
 
     def bind_queue(self, exchange_name, routing_key):
-        self._channel.queue_bind(queue=self._queue,
-                                 exchange=exchange_name,
-                                 routing_key=routing_key)
+        self.connect()
+        try:
+            self._channel.queue_bind(queue=self._queue,
+                                     exchange=exchange_name,
+                                     routing_key=routing_key)
+        finally:
+            self.close_connection()
 
 
-class Writer(PikaClient):
+class Writer(PikaClient, base.AbstractWriter):
 
     def __init__(self, config):
         super(Writer, self).__init__(config)
@@ -102,13 +110,21 @@ class Writer(PikaClient):
                 raise
 
     def publish_message(self, exchange, routing_key, message):
-        props = pika.BasicProperties(headers=message.headers)
-        self._channel.basic_publish(exchange=exchange,
-                                    routing_key=routing_key,
-                                    body=message.body,
-                                    properties=props)
+        self.connect()
+        try:
+            props = pika.BasicProperties(headers=message.headers)
+            self._channel.basic_publish(exchange=exchange,
+                                        routing_key=routing_key,
+                                        body=message.body,
+                                        properties=props)
+        finally:
+            self.close_connection()
 
     def create_exchange(self, exchange_name, ex_type):
-        self._channel.exchange_declare(exchange=exchange_name,
-                                       type=ex_type,
-                                       durable=True)
+        self.connect()
+        try:
+            self._channel.exchange_declare(exchange=exchange_name,
+                                           type=ex_type,
+                                           durable=True)
+        finally:
+            self.close_connection()

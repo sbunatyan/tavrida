@@ -18,7 +18,7 @@ class ConnectionConfig(object):
                  ssl_options=None, connection_attempts=3,
                  retry_delay=1.0, socket_timeout=3.0,
                  locale=None, backpressure_detection=None,
-                 reconnect_attempts=-1):
+                 reconnect_attempts=-1, async_engine=False):
         super(ConnectionConfig, self).__init__()
         self.host = host
         self.port = port
@@ -35,6 +35,7 @@ class ConnectionConfig(object):
         self.locale = locale
         self.backpressure_detection = backpressure_detection
         self.reconnect_attempts = reconnect_attempts  # value <0 means infinite
+        self.async_engine = async_engine
 
     def to_dict(self):
         return copy.copy(self.__dict__)
@@ -44,4 +45,5 @@ class ConnectionConfig(object):
         params["credentials"] = pika.PlainCredentials(
             self.credentials.username, self.credentials.password)
         del params["reconnect_attempts"]
+        del params["async_engine"]
         return pika.ConnectionParameters(**params)

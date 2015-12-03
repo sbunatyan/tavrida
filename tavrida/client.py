@@ -32,11 +32,11 @@ class RPCClient(object):
     def _get_discovery(self):
         return discovery.LocalDiscovery()
 
-    def _get_writer(self):
-        return driver.AMQPDriver("pika").get_writer(self._config)
+    def _get_driver(self):
+        return driver.AMQPDriver(self._config)
 
     def _get_postprocessor(self):
-        return postprocessor.PostProcessor(self._get_writer(),
+        return postprocessor.PostProcessor(self._get_driver(),
                                            self._discovery)
 
     def __getattr__(self, item):

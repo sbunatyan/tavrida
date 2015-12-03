@@ -20,10 +20,10 @@ class PostProcessor(controller.AbstractController, utils.Singleton):
 
     _middlewares = []
 
-    def __init__(self, writer, discovery):
+    def __init__(self, driver, discovery):
         super(PostProcessor, self).__init__()
         self.log = logging.getLogger(__name__)
-        self._writer = writer
+        self._driver = driver
         self._discovery = discovery
 
     def add_middleware(self, middleware):
@@ -70,8 +70,4 @@ class PostProcessor(controller.AbstractController, utils.Singleton):
             ep = entry_point.EntryPointFactory().create(dst)
             exchange = discovery_service.get_remote(ep.service)
         routing_key = ep.to_routing_key()
-        self._writer.connect()
-        try:
-            self._writer.publish_message(exchange, routing_key, message)
-        finally:
-            self._writer.close_connection()
+        self._driver.publish_message(exchange, routing_key, message)
