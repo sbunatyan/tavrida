@@ -24,6 +24,7 @@ class Server(object):
         self._queue_name = queue_name
         self._exchange_name = exchange_name
         self._services = []
+        self._driver = self._get_driver()
 
     @property
     def queue_name(self):
@@ -37,7 +38,7 @@ class Server(object):
         return router.Router()
 
     def _create_subscription_binding(self, service_cls):
-        driver = self._get_driver()
+        driver = self._driver
         rt = self._get_router()
         disc = self._get_discovery()
 
@@ -52,13 +53,13 @@ class Server(object):
     def _create_notification_exchanges(self):
         disc = self._get_discovery()
         disc.get_all_exchanges()
-        driver = self._get_driver()
+        driver = self._driver
         for exc_type, exchange_names in disc.get_all_exchanges().iteritems():
             for exchange_name in exchange_names:
                 driver.create_exchange(exchange_name)
 
     def _create_service_structures(self, service_cls):
-        driver = self._get_driver()
+        driver = self._driver
         rt = self._get_router()
         service_name = rt.reverse_lookup(service_cls)
         driver.bind_queue(self._queue_name,
@@ -67,7 +68,7 @@ class Server(object):
             self._create_subscription_binding(service_cls)
 
     def _create_amqp_structures(self):
-        driver = self._get_driver()
+        driver = self._driver
         driver.create_exchange(self._exchange_name)
         driver.create_queue(self._queue_name)
 
@@ -91,7 +92,7 @@ class Server(object):
     def _get_postprocessor(self, discovery_service=None):
         if not discovery_service:
             discovery_service = discovery.LocalDiscovery()
-        return postprocessor.PostProcessor(self._get_driver(),
+        return postprocessor.PostProcessor(self._driver,
                                            discovery_service)
 
     def _get_preprocessor(self):
@@ -109,7 +110,6 @@ class Server(object):
     def run(self):
         self.log.info("Instantiating service classes")
         self._instantiate_services()
-        self._driver = self._get_driver()
         self.log.info("Creating AMQP structures on Server")
         self._create_amqp_structures()
         self.log.info("Starting server on %s: %s", self._config.host,

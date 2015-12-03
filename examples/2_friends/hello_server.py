@@ -71,7 +71,8 @@ disc.register_local_publisher("test_hello", "test_notification_exchange")
 # requests, responses, errors.
 
 creds = config.Credentials("guest", "guest")
-conf = config.ConnectionConfig("localhost", credentials=creds)
+conf = config.ConnectionConfig("localhost", credentials=creds,
+                               async_engine=True)
 
 srv = server.Server(conf,
                     queue_name="test_service", exchange_name="test_exchange",
