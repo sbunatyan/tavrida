@@ -42,13 +42,14 @@ class Server(object):
         rt = self._get_router()
         disc = self._get_discovery()
 
-        pub_service = rt.subscription_lookup(service_cls)
-        subscriptions = service_cls.get_subscription().subscriptions
-        for pub_method in subscriptions.keys():
-            ep = entry_point.Source(pub_service, pub_method)
-            exchange_name = disc.get_remote_publisher(ep.service)
-            driver.bind_queue(self._queue_name,
-                              exchange_name, ep.to_routing_key())
+        pub_services = rt.subscription_lookup(service_cls)
+        for pub_service in pub_services:
+            subscriptions = service_cls.get_subscription().subscriptions
+            for pub_method in subscriptions.keys():
+                ep = entry_point.Source(pub_service, pub_method)
+                exchange_name = disc.get_remote_publisher(ep.service)
+                driver.bind_queue(self._queue_name,
+                                  exchange_name, ep.to_routing_key())
 
     def _create_notification_exchanges(self):
         disc = self._get_discovery()
@@ -61,11 +62,12 @@ class Server(object):
     def _create_service_structures(self, service_cls):
         driver = self._driver
         rt = self._get_router()
-        service_name = rt.reverse_lookup(service_cls)
-        driver.bind_queue(self._queue_name,
-                          self._exchange_name, service_name)
-        if service_cls.get_subscription().subscriptions:
-            self._create_subscription_binding(service_cls)
+        service_names = rt.reverse_lookup(service_cls)
+        for service_name in service_names:
+            driver.bind_queue(self._queue_name,
+                              self._exchange_name, service_name)
+            if service_cls.get_subscription().subscriptions:
+                self._create_subscription_binding(service_cls)
 
     def _create_amqp_structures(self):
         driver = self._driver

@@ -52,18 +52,24 @@ class Router(utils.Singleton, controller.AbstractController):
         raise exceptions.ServiceNotFound(entry_point=str(ep))
 
     def reverse_lookup(self, service_cls):
+        registered = False
         for rpc_mapping in self._services:
             for srv_name, srv_cls, in rpc_mapping.iteritems():
                 if srv_cls == service_cls:
-                    return srv_name
-        raise exceptions.ServiceIsNotRegister(service=str(service_cls))
+                    registered = True
+                    yield srv_name
+        if not registered:
+            raise exceptions.ServiceIsNotRegister(service=str(service_cls))
 
     def subscription_lookup(self, service_cls):
+        registered = False
         for subscription_mapping in self._subscriptions:
             for srv_name, srv_cls, in subscription_mapping.iteritems():
                 if srv_cls == service_cls:
-                    return srv_name
-        raise exceptions.ServiceIsNotRegister(service=str(service_cls))
+                    registered = True
+                    yield srv_name
+        if not registered:
+            raise exceptions.ServiceIsNotRegister(service=str(service_cls))
 
     def get_service_cls(self, message):
         if isinstance(message, (messages.IncomingError,
