@@ -33,15 +33,17 @@ class AMQPDriver(object):
         writer.create_exchange(exchange_name, "topic")
 
     def bind_queue(self, queue, exchange, service_name):
+        print queue, exchange, service_name
         routing_key = service_name + ".#"
         reader = self._get_blocking_reader(queue)
         reader.bind_queue(exchange, routing_key)
 
     def publish_message(self, exchange, routing_key, message):
-        if self._config.async_engine and self._reader:
+        if self._reader:
             self._reader.publish_message(exchange, routing_key, message)
-        writer = self.get_writer()
-        writer.publish_message(exchange, routing_key, message)
+        else:
+            writer = self.get_writer()
+            writer.publish_message(exchange, routing_key, message)
 
     def listen(self, queue, preprocessor=None):
         reader = self.get_reader(queue, preprocessor)

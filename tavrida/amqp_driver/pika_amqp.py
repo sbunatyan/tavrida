@@ -36,8 +36,10 @@ class Reader(PikaClient, base.AbstractReader):
         self.preprocessor = preprocessor
 
     def connect(self):
-        self._connection = pika.BlockingConnection(self._config)
-        self._channel = self._connection.channel()
+        if not self._connection:
+            self._connection = pika.BlockingConnection(self._config)
+        if not self._channel:
+            self._channel = self._connection.channel()
 
     def run(self):
         try:
@@ -47,6 +49,8 @@ class Reader(PikaClient, base.AbstractReader):
                 self._on_message(msg, frame)
         except (pika.exceptions.ConnectionClosed,
                 pika.exceptions.AMQPConnectionError) as e:
+            self._connection = None
+            self._channel = None
             self.log.error(e)
             time.sleep(self._config.retry_delay)
             if self._if_do_retry():
@@ -85,6 +89,14 @@ class Reader(PikaClient, base.AbstractReader):
                                      routing_key=routing_key)
         finally:
             self.close_connection()
+
+    def publish_message(self, exchange, routing_key, message):
+        self.connect()
+        props = pika.BasicProperties(headers=message.headers)
+        self._channel.basic_publish(exchange=exchange,
+                                    routing_key=routing_key,
+                                    body=message.body,
+                                    properties=props)
 
 
 class Writer(PikaClient, base.AbstractWriter):
