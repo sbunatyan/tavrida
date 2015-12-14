@@ -75,9 +75,10 @@ class Dispatcher(controller.AbstractController):
         :return: corresponding EntryPoint
         :rtype: EntryPoint
         """
-        if isinstance(message, (messages.IncomingError,
-                                messages.IncomingResponse)):
-            return message.source
+        if isinstance(message, messages.IncomingError):
+            return message.destination
+        elif isinstance(message, messages.IncomingResponse):
+            return message.destination
         else:
             return message.destination
 
@@ -133,7 +134,6 @@ def rpc_service(service_name):
         if not issubclass(cls, service.ServiceController):
             raise exceptions.NeedToBeController(service=str(cls))
 
-        router.Router().register(service_name, cls)
         for method_name in dir(cls):
             method = getattr(cls, method_name)
 
@@ -146,6 +146,8 @@ def rpc_service(service_name):
 
                     # register service in router to define message controller
                     # class
+                    router.Router().register(method._service_name,
+                                             cls)
                     ep = entry_point.EntryPoint(method._service_name,
                                                 method._method_name)
                     cls.get_dispatcher().register(ep,

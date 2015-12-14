@@ -144,3 +144,8 @@ class DuplicatedMethodRegistration(BaseException):
 class ForbiddenHeaders(BaseException):
     _msg_template = "Headers are forbidden to re-define %(headers)s"
     _service_error_code = 1029
+
+
+class SubscriptionHandlerNotFound(BaseAckableException):
+    _msg_template = "Subscription handler for %(entry_point)s is not found"
+    _service_error_code = 1030

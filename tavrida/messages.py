@@ -243,8 +243,9 @@ class Response(BaseResponse, Outgoing):
         headers = {
             "correlation_id": request.correlation_id,
             "request_id": request.request_id,
-            "source": str(request.destination),
-            "destination": str(request.reply_to),
+            "source": str(request.source),
+            "destination": str(request.destination),
+            "reply_to": str(request.reply_to)
         }
         request_headers = request.headers.copy()
         request_headers.update(headers)
@@ -307,8 +308,9 @@ class Error(BaseError, Outgoing):
         headers = {
             "correlation_id": request.correlation_id,
             "request_id": request.request_id,
-            "source": str(request.destination),
-            "destination": str(request.reply_to),
+            "source": str(request.source),
+            "destination": str(request.destination),
+            "reply_to": str(request.reply_to)
         }
         request_headers = request.headers.copy()
         request_headers.update(headers)

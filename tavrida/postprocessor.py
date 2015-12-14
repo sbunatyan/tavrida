@@ -65,6 +65,11 @@ class PostProcessor(controller.AbstractController, utils.Singleton):
             source = message.headers["source"]
             ep = entry_point.EntryPointFactory().create(source)
             exchange = discovery_service.get_local_publisher(ep.service)
+        elif message.headers["message_type"] in ("response", "error"):
+            rk = (message.headers["reply_to"] if message.headers["reply_to"]
+                  else message.headers["source"])
+            ep = entry_point.EntryPointFactory().create(rk)
+            exchange = discovery_service.get_remote(ep.service)
         else:
             dst = message.headers["destination"]
             ep = entry_point.EntryPointFactory().create(dst)

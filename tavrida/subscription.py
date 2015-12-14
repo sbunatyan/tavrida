@@ -72,7 +72,7 @@ class Subscription(controller.AbstractController):
         """
         Return handlers that defined for entry_point.
         """
-        local_ep = self._subscriptions[ep.method]
+        local_ep = self._subscriptions.get(ep.method)
         return local_ep
 
     def _create_rpc_proxy(self, service_instance, ep, message):
