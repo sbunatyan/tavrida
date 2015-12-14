@@ -6,25 +6,23 @@ import steps
 import utils
 
 
-class PostProcessor(controller.AbstractController, utils.Singleton):
+class PostProcessor(controller.AbstractController):
 
     """
     Processes outgoing messages. This class is responsible for message
     transfer to writer
     """
 
-    _steps = [
-        steps.CreateAMQPMiddleware(),
-        steps.ValidateMessageMiddleware(),
-    ]
-
-    _middlewares = []
-
     def __init__(self, driver, discovery):
         super(PostProcessor, self).__init__()
         self.log = logging.getLogger(__name__)
         self._driver = driver
         self._discovery = discovery
+        self._middlewares = []
+        self._steps = [
+            steps.CreateAMQPMiddleware(),
+            steps.ValidateMessageMiddleware(),
+        ]
 
     def add_middleware(self, middleware):
         """

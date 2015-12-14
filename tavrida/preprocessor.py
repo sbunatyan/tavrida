@@ -5,28 +5,25 @@ import controller
 import exceptions
 import messages
 import steps
-import utils
 
 
-class PreProcessor(controller.AbstractController, utils.Singleton):
+class PreProcessor(controller.AbstractController):
 
     """
     Preprocesses incoming messages. This class is responsible for message
     transfer to processor
     """
 
-    _middlewares = []
-
-    _steps = [
-        steps.ValidateMessageMiddleware(),
-        steps.CreateMessageMiddleware()
-    ]
-
     def __init__(self, processor, postprocessor):
         super(PreProcessor, self).__init__()
         self.log = logging.getLogger(__name__)
         self._processor = processor
         self._postprocessor = postprocessor
+        self._middlewares = []
+        self._steps = [
+            steps.ValidateMessageMiddleware(),
+            steps.CreateMessageMiddleware()
+        ]
 
     @property
     def processor(self):
