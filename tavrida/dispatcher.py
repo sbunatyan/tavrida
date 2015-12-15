@@ -82,6 +82,13 @@ class Dispatcher(controller.AbstractController):
         else:
             return message.destination
 
+    def _get_source_context(self, message):
+        if isinstance(message, (messages.IncomingError,
+                                messages.IncomingResponse)):
+            return message.reply_to or message.source
+        else:
+            return message.destination
+
     def _create_rpc_proxy(self, service_instance, message):
         """
         Create RPC proxy to provide it to handler
@@ -96,7 +103,7 @@ class Dispatcher(controller.AbstractController):
         :rtype: proxies.RPCProxy
         """
         return proxies.RPCProxy(postprocessor=service_instance.postprocessor,
-                                source=message.destination,
+                                source=self._get_source_context(message),
                                 context=message.context,
                                 correlation_id=message.correlation_id,
                                 headers=message.headers)
