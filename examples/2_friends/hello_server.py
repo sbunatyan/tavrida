@@ -54,6 +54,7 @@ disc = discovery.LocalDiscovery()
 # -------
 # register remote service's exchanges to send there requests (RPC calls)
 disc.register_remote_service("test_world", "test_world_exchange")
+disc.register_remote_service("test_chuck_norris", "test_world_exchange")
 
 # FOR PUBLICATIONS
 # ----------------
