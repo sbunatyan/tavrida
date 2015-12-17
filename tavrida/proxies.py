@@ -22,19 +22,19 @@ class RCPCallProxy(object):
         self._headers = copy.copy(headers) or {}
         self._kwargs = kwargs
 
-    def _make_request(self, context=None, correlation_id=None, reply_to=None,
-                      source=None):
-        if source is None:
+    def _make_request(self, context="", correlation_id="", reply_to="",
+                      source=""):
+        if not source:
             source = self._source
 
-        if reply_to is None:
-            reply_to = source
-
-        if context is None:
+        if not context:
             context = self._context
 
-        if correlation_id is None:
+        if not correlation_id:
             correlation_id = self._correlation_id
+
+        if not reply_to:
+            reply_to = source
 
         payload = self._kwargs
         dst = entry_point.Destination(self._service_name, self._method_name)
@@ -50,8 +50,7 @@ class RCPCallProxy(object):
         request = messages.Request(request_headers, context, payload)
         return request
 
-    def call(self, correlation_id=None, context=None, reply_to=None,
-             source=None):
+    def call(self, correlation_id="", context="", reply_to="", source=""):
         """
         Executes
 
@@ -65,14 +64,14 @@ class RCPCallProxy(object):
                                      source=source)
         self._postprocessor.process(request)
 
-    def cast(self, correlation_id=None, context=None, source=None):
+    def cast(self, correlation_id="", context="", source=""):
         request = self._make_request(context=context,
                                      correlation_id=correlation_id,
                                      reply_to=entry_point.NullEntryPoint(),
                                      source=source)
         self._postprocessor.process(request)
 
-    def transfer(self, request, context=None, reply_to=None, source=None):
+    def transfer(self, request, context="", reply_to="", source=""):
         if request.context:
             context = context or {}
             context.update(request.context)
@@ -86,7 +85,7 @@ class RCPCallProxy(object):
 class RPCMethodProxy(object):
 
     def __init__(self, postprocessor, service_name, method_name, source,
-                 context=None, correlation_id=None, headers=None):
+                 context="", correlation_id="", headers=""):
         self._postprocessor = postprocessor
         self._service_name = service_name
         self._method_name = method_name
@@ -105,7 +104,7 @@ class RPCMethodProxy(object):
 class RPCServiceProxy(object):
 
     def __init__(self, postprocessor, name, source, context=None,
-                 correlation_id=None, headers=None):
+                 correlation_id="", headers=None):
         self._postprocessor = postprocessor
         self._name = name
         self._source = source
@@ -122,7 +121,7 @@ class RPCServiceProxy(object):
 class RPCProxy(object):
 
     def __init__(self, postprocessor, source, context=None,
-                 correlation_id=None, headers=None):
+                 correlation_id="", headers=None):
         self._postprocessor = postprocessor
         self._source = source
         self._context = context
@@ -141,7 +140,7 @@ class RPCProxy(object):
     def add_headers(self, headers):
         self._headers = copy.copy(headers)
 
-    def publish(self, correlation_id=None, **kwargs):
+    def publish(self, correlation_id="", **kwargs):
         headers = {
             "correlation_id": correlation_id or self._correlation_id,
             "source": str(self._source)

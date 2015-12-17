@@ -22,11 +22,16 @@ class Dispatcher(controller.AbstractController):
             "request": {},
             "response": {},
             "error": {},
+            "notification": {}
         }
 
     @property
     def handlers(self):
         return self._handlers
+
+    @property
+    def subscriptions(self):
+        return self._handlers["notification"]
 
     def register(self, entry_point, message_type, method_name):
         """
@@ -39,15 +44,15 @@ class Dispatcher(controller.AbstractController):
         :param method_name: name of handler method
         :type method_name: string
         """
-        if entry_point.method in self._handlers[message_type]:
-            raise exceptions.DuplicatedEntryPointRegistration(
-                method=str(entry_point))
+        ep = str(entry_point)
+        if ep in self._handlers[message_type]:
+            raise exceptions.DuplicatedEntryPointRegistration(entry_point=ep)
         if method_name in self._handlers[message_type].values():
             raise exceptions.DuplicatedMethodRegistration(
-                str(entry_point.method))
-        self._handlers[message_type][entry_point.method] = method_name
+                method_name=method_name)
+        self._handlers[message_type][ep] = method_name
 
-    def get_handler(self, ep, message_type):
+    def get_handler(self, entry_point, message_type):
         """
         Return handler that defined for given entry_point and message_type
 
@@ -58,12 +63,20 @@ class Dispatcher(controller.AbstractController):
         :return:name of handler method
         :rtype: string
         """
+        ep = str(entry_point)
         if message_type not in self._handlers or \
-           ep.method not in self._handlers[message_type]:
+                ep not in self._handlers[message_type]:
             raise exceptions.HandlerNotFound(entry_point=str(ep),
                                              message_type=message_type)
-        method_name = self._handlers[message_type][ep.method]
-        return method_name
+        return self._handlers[message_type][ep]
+
+    def get_publishers(self):
+        for ep in self.subscriptions.keys():
+            yield entry_point.EntryPointFactory().create(ep)
+
+    def get_request_entry_services(self):
+        for ep in self._handlers["request"].keys():
+            yield entry_point.EntryPointFactory().create(ep).service
 
     def _get_dispatching_entry_point(self, message):
         """
@@ -75,17 +88,26 @@ class Dispatcher(controller.AbstractController):
         :return: corresponding EntryPoint
         :rtype: EntryPoint
         """
-        if isinstance(message, messages.IncomingError):
+        if isinstance(message, (messages.IncomingError,
+                                messages.IncomingResponse)):
             return message.destination
-        elif isinstance(message, messages.IncomingResponse):
-            return message.destination
+        elif isinstance(message, messages.IncomingNotification):
+            return message.source
         else:
             return message.destination
 
-    def _get_source_context(self, message):
+    def _get_source_context(self, message, service_instance):
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
-            return message.reply_to or message.source
+            if message.reply_to:
+                ep = message.reply_to
+            else:
+                ep = message.destination.copy()
+                ep.add_type(message.type)
+            return ep
+        elif isinstance(message, messages.IncomingNotification):
+            return entry_point.EntryPointFactory().create(
+                service_instance.service_name)
         else:
             return message.destination
 
@@ -103,7 +125,8 @@ class Dispatcher(controller.AbstractController):
         :rtype: proxies.RPCProxy
         """
         return proxies.RPCProxy(postprocessor=service_instance.postprocessor,
-                                source=self._get_source_context(message),
+                                source=self._get_source_context(
+                                    message, service_instance),
                                 context=message.context,
                                 correlation_id=message.correlation_id,
                                 headers=message.headers)
@@ -141,6 +164,7 @@ def rpc_service(service_name):
         if not issubclass(cls, service.ServiceController):
             raise exceptions.NeedToBeController(service=str(cls))
 
+        cls.service_name = service_name
         for method_name in dir(cls):
             method = getattr(cls, method_name)
 
@@ -149,27 +173,16 @@ def rpc_service(service_name):
                 and hasattr(method, "_service_name") \
                     and hasattr(method, "_method_type"):
 
-                if method._method_type != "notification":
+                # register service in router to define message controller
+                # class
+                router.Router().register(method._service_name,
+                                         cls)
+                ep = entry_point.EntryPoint(method._service_name,
+                                            method._method_name)
+                cls.get_dispatcher().register(ep,
+                                              method._method_type,
+                                              method_name)
 
-                    # register service in router to define message controller
-                    # class
-                    router.Router().register(method._service_name,
-                                             cls)
-                    ep = entry_point.EntryPoint(method._service_name,
-                                                method._method_name)
-                    cls.get_dispatcher().register(ep,
-                                                  method._method_type,
-                                                  method_name)
-
-                # if method subscribes on notifications register publisher
-                # entry point in router and in subscription
-                else:
-                    router.Router().register_subscription(method._service_name,
-                                                          cls)
-                    ep = entry_point.EntryPoint(method._service_name,
-                                                method._method_name)
-                    cls.get_subscription().subscribe(
-                        ep, entry_point.Source(service_name, method_name))
         return cls
     return decorator
 

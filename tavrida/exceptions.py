@@ -118,7 +118,7 @@ class DuplicatedServiceRegistration(BaseAckableException):
 
 class DuplicatedEntryPointRegistration(BaseAckableException):
 
-    _msg_template = "Service %(method)s is already registered"
+    _msg_template = "Service %(entry_point)s is already registered"
     _service_error_code = 1024
 
 

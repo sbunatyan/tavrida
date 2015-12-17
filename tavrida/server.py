@@ -3,7 +3,6 @@ import logging
 
 from amqp_driver import driver as amqp_driver
 import discovery
-import entry_point
 import exceptions
 import postprocessor
 import preprocessor
@@ -39,17 +38,14 @@ class Server(object):
 
     def _create_subscription_binding(self, service_cls):
         driver = self._driver
-        rt = self._get_router()
         disc = self._get_discovery()
+        disp = service_cls.get_dispatcher()
 
-        pub_services = rt.subscription_lookup(service_cls)
-        for pub_service in pub_services:
-            subscriptions = service_cls.get_subscription().subscriptions
-            for pub_method in subscriptions.keys():
-                ep = entry_point.Source(pub_service, pub_method)
-                exchange_name = disc.get_remote_publisher(ep.service)
-                driver.bind_queue(self._queue_name,
-                                  exchange_name, ep.to_routing_key())
+        publishers = disp.get_publishers()
+        for publisher in publishers:
+            exchange_name = disc.get_remote_publisher(publisher.service)
+            driver.bind_queue(self._queue_name,
+                              exchange_name, publisher.to_routing_key())
 
     def _create_notification_exchanges(self):
         disc = self._get_discovery()
@@ -61,12 +57,13 @@ class Server(object):
 
     def _create_service_structures(self, service_cls):
         driver = self._driver
-        rt = self._get_router()
-        service_names = rt.reverse_lookup(service_cls)
+        disp = service_cls.get_dispatcher()
+
+        service_names = disp.get_request_entry_services()
         for service_name in service_names:
             driver.bind_queue(self._queue_name,
                               self._exchange_name, service_name)
-            if service_cls.get_subscription().subscriptions:
+            if service_cls.get_dispatcher().subscriptions:
                 self._create_subscription_binding(service_cls)
 
     def _create_amqp_structures(self):

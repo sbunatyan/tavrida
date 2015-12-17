@@ -1,5 +1,4 @@
 import controller
-import entry_point
 import exceptions
 import messages
 
@@ -9,79 +8,62 @@ import utils
 class Router(utils.Singleton, controller.AbstractController):
 
     _services = []
-    _subscriptions = []
 
     @property
     def services(self):
         return self._services
-
-    @property
-    def subscriptions(self):
-        return self._subscriptions
 
     def register(self, service_name, service_cls):
         ep_maps = set(tuple(ep_map.items()[0]) for ep_map in self._services)
         if not (service_name, service_cls) in ep_maps:
             self._services.append({service_name: service_cls})
 
-    def register_subscription(self, service_name, service_cls):
-        ep = entry_point.ServiceEntryPoint(service_name)
-        try:
-            self._get_subscription_service_cls(ep)
-        except (exceptions.ServiceNotFound, exceptions.HandlerNotFound):
-            self._subscriptions.append({service_name: service_cls})
+    def _check_if_request_suits(self, ep, rpc_mapping):
+        return ep.service in rpc_mapping
 
-    def _get_rpc_service_cls(self, ep, message_type):
+    def check_if_response_suits(self, ep, rpc_mapping, source_srv_name):
+        return (ep.service in rpc_mapping and
+                source_srv_name == rpc_mapping[ep.service].service_name)
 
+    def get_rpc_service_cls(self, message):
+
+        ep = message.destination
+        source_srv_name = message.source.service
+
+        # find service classes in mappings ep -> srv_cls
+        service_classes = []
+        if isinstance(message, (messages.IncomingError,
+                                messages.IncomingResponse)):
+            for rpc_mapping in self._services:
+                if self.check_if_response_suits(ep, rpc_mapping,
+                                                source_srv_name):
+                    service_classes.append(rpc_mapping[ep.service])
+        else:
+            for rpc_mapping in self._services:
+                if self._check_if_request_suits(ep, rpc_mapping):
+                    service_classes.append(rpc_mapping[ep.service])
+
+        if len(service_classes) > 1:
+            raise exceptions.DuplicatedServiceRegistration(service=ep.service)
+        elif len(service_classes) == 0:
+            raise exceptions.ServiceNotFound(entry_point=str(ep))
+        else:
+            return service_classes[0]
+
+    def get_subscription_cls(self, message):
+        ep = message.source
         # find service classes in mappings ep -> srv_cls
         service_classes = []
         for rpc_mapping in self._services:
             if ep.service in rpc_mapping:
                 service_classes.append(rpc_mapping[ep.service])
-        if not service_classes:
-            raise exceptions.ServiceNotFound(entry_point=str(ep))
-
-        # find handler in service classes
-        services = []
-        for srv_cls in service_classes:
-            handler = srv_cls.get_dispatcher().get_handler(ep, message_type)
-            if handler:
-                services.append(srv_cls)
-        if len(services) > 1:
-            raise exceptions.DuplicatedEntryPointRegistration(method=ep.method)
-        elif len(services) == 0:
-            raise exceptions.HandlerNotFound(entry_point=str(ep))
-        else:
-            return services[0]
+        return service_classes
 
     def _get_service(self, service_cls, service_list):
         for service in service_list:
             if type(service) == service_cls:
                 return service
         raise exceptions.UnknownService(service=str(service_cls))
-
-    def _get_subscription_service_cls(self, ep):
-
-        # find service classes in mappings ep -> srv_cls
-        service_classes = []
-        for subscription_mapping in self._subscriptions:
-            if ep.service in subscription_mapping:
-                service_classes.append(subscription_mapping[ep.service])
-        if not service_classes:
-            raise exceptions.ServiceNotFound(entry_point=str(ep))
-
-        # find handler in service classes
-        services = []
-        for srv_cls in service_classes:
-            handler = srv_cls.get_subscription().get_handler(ep)
-            if handler:
-                services.append(srv_cls)
-        if len(services) > 1:
-            raise exceptions.DuplicatedEntryPointRegistration(method=ep.method)
-        elif len(services) == 0:
-            raise exceptions.HandlerNotFound(entry_point=str(ep))
-        else:
-            return services[0]
 
     def reverse_lookup(self, service_cls):
         registered = False
@@ -93,36 +75,22 @@ class Router(utils.Singleton, controller.AbstractController):
         if not registered:
             raise exceptions.ServiceIsNotRegister(service=str(service_cls))
 
-    def subscription_lookup(self, service_cls):
-        registered = False
-        for subscription_mapping in self._subscriptions:
-            for srv_name, srv_cls, in subscription_mapping.iteritems():
-                if srv_cls == service_cls:
-                    registered = True
-                    yield srv_name
-        if not registered:
-            raise exceptions.ServiceIsNotRegister(service=str(service_cls))
+    def _process_rpc(self, message, service_cls, service_list):
+        service = self._get_service(service_cls, service_list)
+        return service_cls.get_dispatcher().process(message, service)
 
-    def get_service_cls(self, message):
-        if isinstance(message, (messages.IncomingError,
-                                messages.IncomingResponse)):
-            service_cls = self._get_rpc_service_cls(message.destination,
-                                                    message.message_type)
-        elif isinstance(message, messages.IncomingNotification):
-            service_cls = self._get_subscription_service_cls(message.source)
-        else:
-            service_cls = self._get_rpc_service_cls(message.destination,
-                                                    message.message_type)
-        return service_cls
+    def _process_subscription(self, message, service_classes, service_list):
+        for service_cls in service_classes:
+            service = self._get_service(service_cls, service_list)
+            service_cls.get_dispatcher().process(message, service)
 
     def process(self, message, service_list):
         """
         Return service class that defined for entry_point.
         """
-        service_cls = self.get_service_cls(message)
-        service = self._get_service(service_cls, service_list)
-
         if isinstance(message, messages.IncomingNotification):
-            return service_cls.get_subscription().process(message, service)
+            service_classes = self.get_subscription_cls(message)
+            self._process_subscription(message, service_classes, service_list)
         else:
-            return service_cls.get_dispatcher().process(message, service)
+            service_cls = self.get_rpc_service_cls(message)
+            return self._process_rpc(message, service_cls, service_list)

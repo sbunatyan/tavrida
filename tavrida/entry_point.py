@@ -5,10 +5,11 @@ class EntryPoint(object):
     Stores service_name and method_name
     """
 
-    def __init__(self, service_name, method_name):
+    def __init__(self, service_name, method_name, message_type=None):
         super(EntryPoint, self).__init__()
         self._service_name = service_name
         self._method_name = method_name
+        self._message_type = message_type
 
     @property
     def service(self):
@@ -18,11 +19,22 @@ class EntryPoint(object):
     def method(self):
         return self._method_name
 
+    @property
+    def message_type(self):
+        return self._message_type
+
     def copy(self):
-        return self.__init__(self.service, self.method)
+        return self.__class__(self.service, self.method, self.message_type)
 
     def __str__(self):
-        return '{0}.{1}'.format(self.service, self.method)
+        if self.message_type:
+            return '{0}.{1}.{2}'.format(self.service, self.method,
+                                        self.message_type)
+        else:
+            return '{0}.{1}'.format(self.service, self.method)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __eq__(self, other):
         if other is None:
@@ -37,6 +49,9 @@ class EntryPoint(object):
 
     def to_routing_key(self):
         return str(self)
+
+    def add_type(self, message_type):
+        self._message_type = message_type
 
 
 class ServiceEntryPoint(EntryPoint):
@@ -76,26 +91,29 @@ class Destination(EntryPoint):
 
 class EntryPointFactory(object):
 
-    def _create_entry_point(self, service_name, method_name):
-        return EntryPoint(service_name, method_name)
+    def _create_entry_point(self, *parts):
+        return EntryPoint(*parts)
 
     def _create_service(self, service_name):
         return ServiceEntryPoint(service_name)
 
-    def _create_source(self, service_name, method_name):
-        return Source(service_name, method_name)
+    def _create_source(self, *parts):
+        return Source(*parts)
 
-    def _create_destination(self, service_name, method_name):
-        return Destination(service_name, method_name)
+    def _create_destination(self, *parts):
+        return Destination(*parts)
 
     def _create_null(self):
         return NullEntryPoint()
 
-    def create(self, string, source=False, destination=False):
-        if not string:
+    def create(self, value, source=False, destination=False):
+        if isinstance(value, EntryPoint):
+            return value
+
+        if not value:
             return self._create_null()
-        elif "." in string:
-            parts = string.split(".")
+        elif "." in value:
+            parts = value.split(".")
             if source:
                 return self._create_source(*parts)
             if destination:
@@ -103,4 +121,4 @@ class EntryPointFactory(object):
             else:
                 return self._create_entry_point(*parts)
         else:
-            return self._create_service(string)
+            return self._create_service(value)

@@ -3,7 +3,6 @@ import logging
 import controller
 import entry_point
 import steps
-import utils
 
 
 class PostProcessor(controller.AbstractController):
@@ -64,8 +63,7 @@ class PostProcessor(controller.AbstractController):
             ep = entry_point.EntryPointFactory().create(source)
             exchange = discovery_service.get_local_publisher(ep.service)
         elif message.headers["message_type"] in ("response", "error"):
-            rk = (message.headers["reply_to"] if message.headers["reply_to"]
-                  else message.headers["source"])
+            rk = message.headers["reply_to"] or message.headers["source"]
             ep = entry_point.EntryPointFactory().create(rk)
             exchange = discovery_service.get_remote(ep.service)
         else:

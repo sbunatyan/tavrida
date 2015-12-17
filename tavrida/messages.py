@@ -99,7 +99,6 @@ class Message(object):
         self.request_id = headers.get("request_id")
         self.message_id = headers.get("message_id")
         self.message_type = headers.get("message_type")
-
         self.reply_to = entry_point.EntryPointFactory().create(
             headers.get("reply_to"))
         self.source = entry_point.EntryPointFactory().create(
@@ -208,7 +207,7 @@ class BaseResponse(Message):
 
     def __init__(self, headers, context, payload):
         headers = copy.copy(headers)
-        headers["reply_to"] = None
+        headers["reply_to"] = str(entry_point.NullEntryPoint())
         headers["message_type"] = "response"
         super(BaseResponse, self).__init__(headers, context, payload)
 
@@ -260,7 +259,7 @@ class BaseError(Message):
 
     def __init__(self, headers, context, payload):
         headers = copy.copy(headers)
-        headers["reply_to"] = None
+        headers["reply_to"] = str(entry_point.NullEntryPoint())
         headers["message_type"] = "error"
         super(BaseError, self).__init__(headers, context, payload)
 
@@ -325,8 +324,8 @@ class IncomingNotification(Message, Incoming):
 
     def __init__(self, headers, context, payload):
         headers = copy.copy(headers)
-        headers["reply_to"] = None
-        headers["destination"] = None
+        headers["reply_to"] = str(entry_point.NullEntryPoint())
+        headers["destination"] = str(entry_point.NullEntryPoint())
         headers["message_type"] = "notification"
         super(IncomingNotification, self).__init__(headers, context, payload)
 
@@ -339,8 +338,8 @@ class Notification(Message, Outgoing):
 
     def __init__(self, headers, context, payload):
         headers = copy.copy(headers)
-        headers["reply_to"] = None
-        headers["destination"] = None
+        headers["reply_to"] = str(entry_point.NullEntryPoint())
+        headers["destination"] = str(entry_point.NullEntryPoint())
         headers["message_type"] = "notification"
         headers["request_id"] = uuid.uuid4().hex
 
