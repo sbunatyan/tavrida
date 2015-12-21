@@ -145,7 +145,7 @@ class LocalDiscovery(AbstractDiscovery):
         self._remote_registry[service_name] = exchange_name
 
     def _register_remote_publisher(self, service_name, exchange_name):
-        self._local_publisher_registry[service_name] = exchange_name
+        self._remote_publisher_registry[service_name] = exchange_name
 
     def _register_local_publisher(self, service_name, exchange_name):
         self._local_publisher_registry[service_name] = exchange_name
@@ -154,7 +154,7 @@ class LocalDiscovery(AbstractDiscovery):
         del self._remote_registry[service_name]
 
     def unregister_remote_publisher(self, service_name):
-        del self._local_publisher_registry[service_name]
+        del self._remote_publisher_registry[service_name]
 
     def unregister_local_publisher(self, service_name):
         del self._local_publisher_registry[service_name]
@@ -165,9 +165,9 @@ class LocalDiscovery(AbstractDiscovery):
         return self._remote_registry[service_name]
 
     def get_remote_publisher(self, service_name):
-        if service_name not in self._local_publisher_registry:
+        if service_name not in self._remote_publisher_registry:
             raise exceptions.UnableToDiscover(service=service_name)
-        return self._local_publisher_registry[service_name]
+        return self._remote_publisher_registry[service_name]
 
     def get_local_publisher(self, service_name):
         if service_name not in self._local_publisher_registry:
