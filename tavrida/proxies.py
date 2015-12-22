@@ -33,7 +33,7 @@ class RCPCallProxy(object):
         if not correlation_id:
             correlation_id = self._correlation_id
 
-        if not reply_to:
+        if not reply_to and not isinstance(reply_to, entry_point.EntryPoint):
             reply_to = source
 
         payload = self._kwargs
