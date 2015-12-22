@@ -5,7 +5,6 @@ from amqp_driver import driver as amqp_driver
 import exceptions
 import postprocessor
 import preprocessor
-import processor
 import router
 
 
@@ -80,12 +79,9 @@ class Server(object):
         driver = amqp_driver.AMQPDriver(self._config)
         return driver
 
-    def _get_processor(self, services):
-        return processor.Processor(services)
-
     def _get_preprocessor(self):
-        processor_instance = self._get_processor(self._services)
-        return preprocessor.PreProcessor(processor_instance)
+        return preprocessor.PreProcessor(self._get_router(),
+                                         self._services)
 
     def _instantiate_services(self):
         for s in self._service_list:

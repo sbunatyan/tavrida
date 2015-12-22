@@ -11,10 +11,11 @@ class PreProcessor(controller.AbstractController):
     transfer to processor
     """
 
-    def __init__(self, processor):
+    def __init__(self, router, service_list):
         super(PreProcessor, self).__init__()
         self.log = logging.getLogger(__name__)
-        self._processor = processor
+        self._router = router
+        self._service_list = service_list
         self._steps = [
             steps.ValidateMessageMiddleware(),
             steps.CreateMessageMiddleware()
@@ -37,4 +38,4 @@ class PreProcessor(controller.AbstractController):
         all_controllers = self._steps
         for step in all_controllers:
             msg = step.process(msg)
-        self._processor.process(msg)
+        self._router.process(msg, self._service_list)
