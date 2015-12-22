@@ -21,23 +21,22 @@ class Router(utils.Singleton, controller.AbstractController):
     def _check_if_request_suits(self, ep, rpc_mapping):
         return ep.service in rpc_mapping
 
-    def check_if_response_suits(self, ep, rpc_mapping, source_srv_name):
+    def check_if_response_suits(self, ep, rpc_mapping, dst_srv_name):
         return (ep.service in rpc_mapping and
-                source_srv_name == rpc_mapping[ep.service].service_name)
+                dst_srv_name == rpc_mapping[ep.service].service_name)
 
     def get_rpc_service_cls(self, message):
 
         ep = message.destination
-        source_srv_name = message.source.service
 
         # find service classes in mappings ep -> srv_cls
         service_classes = []
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
             for rpc_mapping in self._services:
-                if self.check_if_response_suits(ep, rpc_mapping,
-                                                source_srv_name):
-                    service_classes.append(rpc_mapping[ep.service])
+                if self.check_if_response_suits(message.source, rpc_mapping,
+                                                ep.service):
+                    service_classes.append(rpc_mapping[message.source.service])
         else:
             for rpc_mapping in self._services:
                 if self._check_if_request_suits(ep, rpc_mapping):

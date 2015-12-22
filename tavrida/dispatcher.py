@@ -90,7 +90,7 @@ class Dispatcher(controller.AbstractController):
         """
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
-            return message.destination
+            return message.source
         elif isinstance(message, messages.IncomingNotification):
             return message.source
         else:
@@ -99,11 +99,7 @@ class Dispatcher(controller.AbstractController):
     def _get_source_context(self, message, service_instance):
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
-            if message.reply_to:
-                ep = message.reply_to
-            else:
-                ep = message.destination.copy()
-                ep.add_type(message.type)
+            ep = message.destination.copy()
             return ep
         elif isinstance(message, messages.IncomingNotification):
             return entry_point.EntryPointFactory().create(

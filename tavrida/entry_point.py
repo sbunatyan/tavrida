@@ -5,11 +5,10 @@ class EntryPoint(object):
     Stores service_name and method_name
     """
 
-    def __init__(self, service_name, method_name, message_type=None):
+    def __init__(self, service_name, method_name):
         super(EntryPoint, self).__init__()
         self._service_name = service_name
         self._method_name = method_name
-        self._message_type = message_type
 
     @property
     def service(self):
@@ -19,19 +18,11 @@ class EntryPoint(object):
     def method(self):
         return self._method_name
 
-    @property
-    def message_type(self):
-        return self._message_type
-
     def copy(self):
-        return self.__class__(self.service, self.method, self.message_type)
+        return self.__class__(self.service, self.method)
 
     def __str__(self):
-        if self.message_type:
-            return '{0}.{1}.{2}'.format(self.service, self.method,
-                                        self.message_type)
-        else:
-            return '{0}.{1}'.format(self.service, self.method)
+        return '{0}.{1}'.format(self.service, self.method)
 
     def __repr__(self):
         return self.__str__()
@@ -50,9 +41,6 @@ class EntryPoint(object):
     def to_routing_key(self):
         return str(self)
 
-    def add_type(self, message_type):
-        self._message_type = message_type
-
 
 class ServiceEntryPoint(EntryPoint):
 
@@ -61,6 +49,9 @@ class ServiceEntryPoint(EntryPoint):
 
     def __str__(self):
         return self.service
+
+    def copy(self):
+        return self.__class__(self.service)
 
 
 class NullEntryPoint(EntryPoint):
