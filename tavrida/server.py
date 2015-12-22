@@ -2,7 +2,6 @@ import abc
 import logging
 
 from amqp_driver import driver as amqp_driver
-import discovery
 import exceptions
 import postprocessor
 import preprocessor
@@ -38,7 +37,7 @@ class Server(object):
 
     def _create_subscription_binding(self, service_cls):
         driver = self._driver
-        disc = self._get_discovery()
+        disc = service_cls.get_discovery()
         disp = service_cls.get_dispatcher()
 
         publishers = disp.get_publishers()
@@ -47,8 +46,8 @@ class Server(object):
             driver.bind_queue(self._queue_name,
                               exchange_name, publisher.to_routing_key())
 
-    def _create_notification_exchanges(self):
-        disc = self._get_discovery()
+    def _create_notification_exchanges(self, service_cls):
+        disc = service_cls.get_discovery()
         disc.get_all_exchanges()
         driver = self._driver
         for exc_type, exchange_names in disc.get_all_exchanges().iteritems():
@@ -71,10 +70,9 @@ class Server(object):
         driver.create_exchange(self._exchange_name)
         driver.create_queue(self._queue_name)
 
-        self._create_notification_exchanges()
-
         for service_cls in self._service_list:
             self._create_service_structures(service_cls)
+            self._create_notification_exchanges(service_cls)
 
     def _get_driver(self):
         if not self._config:
@@ -82,29 +80,19 @@ class Server(object):
         driver = amqp_driver.AMQPDriver(self._config)
         return driver
 
-    def _get_discovery(self):
-        return self._get_postprocessor().discovery_service
-
     def _get_processor(self, services):
         return processor.Processor(services)
 
-    def _get_postprocessor(self, discovery_service=None):
-        if not discovery_service:
-            discovery_service = discovery.LocalDiscovery()
-        return postprocessor.PostProcessor(self._driver,
-                                           discovery_service)
-
     def _get_preprocessor(self):
         processor_instance = self._get_processor(self._services)
-        postprocessor_instance = self._get_postprocessor()
-        return preprocessor.PreProcessor(processor_instance,
-                                         postprocessor_instance)
+        return preprocessor.PreProcessor(processor_instance)
 
     def _instantiate_services(self):
-        preproc = self._get_preprocessor()
         for s in self._service_list:
             self.log.info("Service %s", s.__name__)
-            self._services.append(s(preproc, preproc.postprocessor))
+            postproc = postprocessor.PostProcessor(self._driver,
+                                                   s.get_discovery())
+            self._services.append(s(postproc))
 
     def run(self):
         self.log.info("Instantiating service classes")

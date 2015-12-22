@@ -106,7 +106,8 @@ disc.register_remote_publisher("test_hello", "test_notification_exchange")
 
 creds = config.Credentials("guest", "guest")
 conf = config.ConnectionConfig("localhost", credentials=creds)
-
+WorldController.set_discovery(disc)
+ChuckController.set_discovery(disc)
 srv = server.Server(conf,
                     queue_name="test_world_service",
                     exchange_name="test_world_exchange",

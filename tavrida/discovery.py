@@ -134,12 +134,11 @@ class AbstractDiscovery(object):
 
 class LocalDiscovery(AbstractDiscovery):
 
-    _remote_registry = {}
-    _remote_publisher_registry = {}
-    _local_publisher_registry = {}
-
     def __init__(self):
         super(LocalDiscovery, self).__init__()
+        self._remote_registry = {}
+        self._remote_publisher_registry = {}
+        self._local_publisher_registry = {}
 
     def _register_remote(self, service_name, exchange_name):
         self._remote_registry[service_name] = exchange_name

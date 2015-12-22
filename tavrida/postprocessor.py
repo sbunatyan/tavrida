@@ -17,20 +17,10 @@ class PostProcessor(controller.AbstractController):
         self.log = logging.getLogger(__name__)
         self._driver = driver
         self._discovery = discovery
-        self._middlewares = []
         self._steps = [
             steps.CreateAMQPMiddleware(),
             steps.ValidateMessageMiddleware(),
         ]
-
-    def add_middleware(self, middleware):
-        """
-        Prepend middleware controller
-
-        :param middleware: middleware object
-        :type middleware: middleware.Middleware
-        """
-        self._middlewares.insert(0, middleware)
 
     def process(self, message_obj):
         """
@@ -40,7 +30,7 @@ class PostProcessor(controller.AbstractController):
         :type message_obj: messages.Message
         """
         msg = message_obj
-        all_controllers = self._middlewares + self._steps
+        all_controllers = self._steps
         for step in all_controllers:
             msg = step.process(msg)
         self._send(msg)
@@ -48,6 +38,9 @@ class PostProcessor(controller.AbstractController):
     @property
     def discovery_service(self):
         return self._discovery
+
+    def set_discovery(self, discovery):
+        self._discovery = discovery
 
     def _send(self, message):
         """

@@ -74,7 +74,7 @@ disc.register_local_publisher("test_hello", "test_notification_exchange")
 creds = config.Credentials("guest", "guest")
 conf = config.ConnectionConfig("localhost", credentials=creds,
                                async_engine=True)
-
+HelloController.set_discovery(disc)
 srv = server.Server(conf,
                     queue_name="test_service", exchange_name="test_exchange",
                     service_list=[HelloController])
