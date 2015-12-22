@@ -33,7 +33,6 @@ class AMQPDriver(object):
         writer.create_exchange(exchange_name, "topic")
 
     def bind_queue(self, queue, exchange, service_name):
-        print queue, exchange, service_name
         routing_key = service_name + ".#"
         reader = self._get_blocking_reader(queue)
         reader.bind_queue(exchange, routing_key)
