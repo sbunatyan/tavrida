@@ -1,28 +1,28 @@
-import pika_amqp
-import pika_aync
+import pika_sync
+import pika_async
 
 
 class AMQPDriver(object):
 
     def __init__(self, config):
         if not config.async_engine:
-            self._amqp = pika_amqp
+            self._engine = pika_sync
         else:
-            self._amqp = pika_aync
+            self._engine = pika_async
         self._config = config
         self._reader = None
 
     def get_reader(self, queue, preprocessor=None):
-        return self._amqp.Reader(self._config, queue, preprocessor)
+        return self._engine.Reader(self._config, queue, preprocessor)
 
     def get_writer(self):
-        return self._amqp.Writer(self._config)
+        return self._engine.Writer(self._config)
 
     def _get_blocking_writer(self):
-        return pika_amqp.Writer(self._config)
+        return pika_sync.Writer(self._config)
 
     def _get_blocking_reader(self, queue, preprocessor=None):
-        return pika_amqp.Reader(self._config, queue, preprocessor)
+        return pika_sync.Reader(self._config, queue, preprocessor)
 
     def create_queue(self, queue):
         reader = self._get_blocking_reader(queue)
