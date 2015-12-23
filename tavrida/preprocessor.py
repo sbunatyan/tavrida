@@ -21,10 +21,6 @@ class PreProcessor(controller.AbstractController):
             steps.CreateMessageMiddleware()
         ]
 
-    @property
-    def processor(self):
-        return self._processor
-
     def process(self, amqp_message):
         """
         PreProcesses incoming message
