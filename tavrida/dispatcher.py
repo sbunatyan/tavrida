@@ -33,7 +33,7 @@ class Dispatcher(controller.AbstractController):
     def subscriptions(self):
         return self._handlers["notification"]
 
-    def register(self, entry_point, message_type, method_name):
+    def register(self, entry_point, message_type, handler_method_name):
         """
         Registers for given message type and entry_point a handler
 
@@ -47,10 +47,10 @@ class Dispatcher(controller.AbstractController):
         ep = str(entry_point)
         if ep in self._handlers[message_type]:
             raise exceptions.DuplicatedEntryPointRegistration(entry_point=ep)
-        if method_name in self._handlers[message_type].values():
+        if handler_method_name in self._handlers[message_type].values():
             raise exceptions.DuplicatedMethodRegistration(
-                method_name=method_name)
-        self._handlers[message_type][ep] = method_name
+                method_name=handler_method_name)
+        self._handlers[message_type][ep] = handler_method_name
 
     def get_handler(self, entry_point, message_type):
         """
