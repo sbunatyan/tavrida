@@ -90,17 +90,16 @@ class Dispatcher(controller.AbstractController):
         """
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
-            return message.source
+            return message.source.copy()
         elif isinstance(message, messages.IncomingNotification):
             return message.source
         else:
-            return message.destination
+            return message.destination.copy()
 
     def _get_source_context(self, message, service_instance):
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
-            ep = message.destination.copy()
-            return ep
+            return message.destination
         elif isinstance(message, messages.IncomingNotification):
             return entry_point.EntryPointFactory().create(
                 service_instance.service_name)
