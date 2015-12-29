@@ -133,12 +133,22 @@ class ServiceController(controller.AbstractController):
         if isinstance(message, messages.IncomingError):
             return self._process_error(method, message, proxy)
 
+    def _run_incoming_middlewares(self, message):
+        continue_processing = True
+        res = message
+        for mld in self._incoming_middlewares:
+            res = mld.process(res)
+
+            if isinstance(res, (messages.Response, messages.Error)):
+                continue_processing = False
+
+                if isinstance(message, messages.IncomingRequestCall):
+                    self._send(res)
+                break
+        return continue_processing, res
+
     def process(self, method, message, proxy):
 
-        for mld in self._incoming_middlewares:
-            res = mld.process(message)
-            if (isinstance(res, (messages.Response, messages.Error)) and
-               isinstance(message, messages.IncomingRequestCall)):
-                    self._send(res)
-
-        self._route_message_by_type(method, message, proxy)
+        continue_processing, res = self._run_incoming_middlewares(message)
+        if continue_processing:
+            self._route_message_by_type(method, res, proxy)
