@@ -18,12 +18,14 @@ class Router(utils.Singleton, controller.AbstractController):
         if not (service_name, service_cls) in ep_maps:
             self._services.append({service_name: service_cls})
 
-    def _check_if_request_suits(self, ep, rpc_mapping):
-        return ep.service in rpc_mapping
+    def _check_if_request_suits(self, message, rpc_mapping):
+        return message.destination.service in rpc_mapping
 
-    def check_if_response_suits(self, ep, rpc_mapping, dst_srv_name):
-        return (ep.service in rpc_mapping and
-                dst_srv_name == rpc_mapping[ep.service].service_name)
+    def _check_if_response_suits(self, message, rpc_mapping):
+        dst_service = message.destination.service
+        src_service = message.source.service
+        return (src_service in rpc_mapping and
+                dst_service == rpc_mapping[src_service].service_name)
 
     def get_rpc_service_cls(self, message):
 
@@ -34,12 +36,11 @@ class Router(utils.Singleton, controller.AbstractController):
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
             for rpc_mapping in self._services:
-                if self.check_if_response_suits(message.source, rpc_mapping,
-                                                ep.service):
+                if self._check_if_response_suits(message, rpc_mapping):
                     service_classes.append(rpc_mapping[message.source.service])
         else:
             for rpc_mapping in self._services:
-                if self._check_if_request_suits(ep, rpc_mapping):
+                if self._check_if_request_suits(message, rpc_mapping):
                     service_classes.append(rpc_mapping[ep.service])
 
         if len(service_classes) > 1:
