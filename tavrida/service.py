@@ -64,6 +64,17 @@ class ServiceController(controller.AbstractController):
     def _send(self, message):
         return self.postprocessor.process(message)
 
+    def _filter_redundant_parameters(self, method_name, incoming_kwargs):
+        arg_names = getattr(self, method_name)._arg_names[2:]
+        incoming_params = incoming_kwargs.keys()
+        if (len(arg_names) > incoming_params or
+           (set(arg_names) - set(incoming_params))):
+            raise ValueError("Wrong incoming parameters (%s) for method '%s'"
+                             % (str(incoming_kwargs), method_name))
+        else:
+            return dict((k, v) for (k, v) in incoming_kwargs.iteritems()
+                        if k in arg_names)
+
     def _handle_request(self, method, request, proxy):
         """
         Calls processor for Request message, gets result and handles exceptions
@@ -74,7 +85,9 @@ class ServiceController(controller.AbstractController):
         :rtype: messages.Response, messages.Error, None
         """
         try:
-            result = getattr(self, method)(request, proxy, **request.payload)
+            filtered_kwargs = self._filter_redundant_parameters(
+                method, request.payload)
+            result = getattr(self, method)(request, proxy, **filtered_kwargs)
             if isinstance(request, messages.IncomingRequestCall):
                 return result
         except Exception as e:

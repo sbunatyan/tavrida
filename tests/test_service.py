@@ -75,7 +75,49 @@ class ServiceTestCase(unittest.TestCase):
         self.postprocessor.process.assert_called_once_with(message)
         self.assertEqual(res, self.postprocessor.process())
 
-    def test_handle_request_call_positive(self):
+    def test_filter_lack_of_parameters(self):
+        """
+        Tests if number of incoming parameters less that method accepts
+        """
+        self.service.method = lambda x: x
+        self.service.method._arg_names = ["request", "proxy", "x"]
+        self.assertRaises(ValueError,
+                          self.service._filter_redundant_parameters,
+                          "method", {})
+
+    def test_filter_no_required_parameters(self):
+        """
+        Tests if some of method parameters are not present
+        """
+        self.service.method = lambda x: x
+        self.service.method._arg_names = ["request", "proxy", "x"]
+        self.assertRaises(ValueError,
+                          self.service._filter_redundant_parameters,
+                          "method", {"y": "y"})
+
+    def test_filter_redundant_parameters(self):
+        """
+        Tests filtering redundant parameters
+        """
+        self.service.method = lambda x: x
+        self.service.method._arg_names = ["request", "proxy", "x"]
+        res = self.service._filter_redundant_parameters("method", {"y": "y",
+                                                                   "x": "x"})
+        self.assertDictEqual(res, {"x": "x"})
+
+    def test_filter_no_redundant_parameters(self):
+        """
+        Tests filtering redundant parameters when no there are no redundant
+        parameters
+        """
+        self.service.method = lambda x: x
+        self.service.method._arg_names = ["request", "proxy", "x"]
+        res = self.service._filter_redundant_parameters("method", {"x": "x"})
+        self.assertDictEqual(res, {"x": "x"})
+
+    @mock.patch.object(service.ServiceController,
+                       "_filter_redundant_parameters")
+    def test_handle_request_call_positive(self, filter_mock):
         """
         Tests successful request (IncomingRequestCall) handling
         """
@@ -83,13 +125,16 @@ class ServiceTestCase(unittest.TestCase):
         method = "method"
         request = mock.MagicMock(spec=messages.IncomingRequestCall)
         request.payload = {"param": "value"}
+        filter_mock.return_value = request.payload
         proxy = mock.MagicMock()
         res = self.service._handle_request(method, request, proxy)
         self.service.method.assert_called_once_with(request, proxy,
-                                                    **request.payload)
+                                                    **filter_mock())
         self.assertEqual(res, self.service.method())
 
-    def test_handle_request_cast_positive(self):
+    @mock.patch.object(service.ServiceController,
+                       "_filter_redundant_parameters")
+    def test_handle_request_cast_positive(self, filter_mock):
         """
         Tests successful request (IncomingRequestCast) handling
         """
@@ -97,13 +142,16 @@ class ServiceTestCase(unittest.TestCase):
         method = "method"
         request = mock.MagicMock(spec=messages.IncomingRequestCast)
         request.payload = {"param": "value"}
+        filter_mock.return_value = request.payload
         proxy = mock.MagicMock()
         res = self.service._handle_request(method, request, proxy)
         self.service.method.assert_called_once_with(request, proxy,
-                                                    **request.payload)
+                                                    **filter_mock())
         self.assertIsNone(res)
 
-    def test_handle_request_call_with_non_aclable_exception(self):
+    @mock.patch.object(service.ServiceController,
+                       "_filter_redundant_parameters")
+    def test_handle_request_call_with_non_aclable_exception(self, filter_mock):
         """
         Tests request (IncomingRequestCall) handling when non-ackable
         exception raises
@@ -118,14 +166,17 @@ class ServiceTestCase(unittest.TestCase):
         request.reply_to = mock.MagicMock()
         request.source = mock.MagicMock()
         proxy = mock.MagicMock()
+        filter_mock.return_value = request.payload
         res = self.service._handle_request(method, request, proxy)
         self.service.method.assert_called_once_with(request, proxy,
-                                                    **request.payload)
+                                                    **filter_mock())
         self.assertIsInstance(res, messages.Error)
         self.assertEqual(res.payload["class"],
                          exceptions.BaseException.__name__)
 
-    def test_handle_request_call_with_ackable_exception(self):
+    @mock.patch.object(service.ServiceController,
+                       "_filter_redundant_parameters")
+    def test_handle_request_call_with_ackable_exception(self, filter_mock):
         """
         Tests request (IncomingRequestCall) handling when ackable
         exception raises
@@ -141,9 +192,10 @@ class ServiceTestCase(unittest.TestCase):
         request.reply_to = mock.MagicMock()
         request.source = mock.MagicMock()
         proxy = mock.MagicMock()
+        filter_mock.return_value = request.payload
         res = self.service._handle_request(method, request, proxy)
         self.service.method.assert_called_once_with(request, proxy,
-                                                    **request.payload)
+                                                    **filter_mock())
         self.assertIsInstance(res, messages.Error)
         self.assertEqual(res.payload["class"],
                          exceptions.BaseAckableException.__name__)

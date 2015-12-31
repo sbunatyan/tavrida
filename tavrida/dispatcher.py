@@ -1,3 +1,4 @@
+import inspect
 import functools
 
 import controller
@@ -196,6 +197,7 @@ def rpc_method(service, method):
         func._service_name = service
         func._method_name = method
         func._method_type = "request"
+        func._arg_names = inspect.getargspec(func)[0][1:]
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -218,6 +220,7 @@ def rpc_response_method(service, method):
         func._service_name = service
         func._method_name = method
         func._method_type = "response"
+        func._arg_names = inspect.getargspec(func)[0][1:]
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -240,6 +243,7 @@ def rpc_error_method(service, method):
         func._service_name = service
         func._method_name = method
         func._method_type = "error"
+        func._arg_names = inspect.getargspec(func)[0][1:]
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -264,6 +268,7 @@ def subscription_method(service, method):
         func._service_name = service
         func._method_name = method
         func._method_type = "notification"
+        func._arg_names = inspect.getargspec(func)[0][1:]
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
