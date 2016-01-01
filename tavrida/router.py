@@ -29,16 +29,16 @@ class Router(utils.Singleton, controller.AbstractController):
 
     def get_rpc_service_cls(self, message):
 
-        ep = message.destination
-
         # find service classes in mappings ep -> srv_cls
         service_classes = []
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
+            ep = message.source
             for rpc_mapping in self._services:
                 if self._check_if_response_suits(message, rpc_mapping):
                     service_classes.append(rpc_mapping[message.source.service])
         else:
+            ep = message.destination
             for rpc_mapping in self._services:
                 if self._check_if_request_suits(message, rpc_mapping):
                     service_classes.append(rpc_mapping[ep.service])
