@@ -67,8 +67,7 @@ class ServiceController(controller.AbstractController):
     def _filter_redundant_parameters(self, method_name, incoming_kwargs):
         arg_names = getattr(self, method_name)._arg_names[2:]
         incoming_params = incoming_kwargs.keys()
-        if (len(arg_names) > incoming_params or
-           (set(arg_names) - set(incoming_params))):
+        if set(arg_names) - set(incoming_params):
             raise ValueError("Wrong incoming parameters (%s) for method '%s'"
                              % (str(incoming_kwargs), method_name))
         else:
