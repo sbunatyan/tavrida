@@ -10,6 +10,14 @@ import messages
 
 class ServiceController(controller.AbstractController):
 
+    """
+    Base service controller. All service controllers should be inherited from
+    this class.
+    This class is responsible for final message processing: calls incoming
+    middlewares, calls handler method, after handling calls outgoing
+    middlewares and finally sends result to postprocessor.
+    """
+
     __metaclass__ = abc.ABCMeta
 
     _dispatcher = None

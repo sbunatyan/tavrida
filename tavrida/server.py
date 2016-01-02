@@ -10,6 +10,12 @@ import router
 
 class Server(object):
 
+    """
+    Server start multiple services.
+    Before start it creates all AMQP structures for each service
+    (queue, exchanges, bindings) in RabbitMQ
+    """
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, config, queue_name, exchange_name, service_list):
@@ -91,12 +97,16 @@ class Server(object):
             self._services.append(s(postproc))
 
     def run(self):
-        self.log.info("Instantiating service classes")
+        """
+        Starts to listen RabbitMQ.
+        Before listening instantiates service objects and creates AMQP
+        structures in RabbitMQ
+        """
+        self.log.info("Instantiating services")
         self._instantiate_services()
         self.log.info("Creating AMQP structures on Server")
         self._create_amqp_structures()
-        self.log.info("Starting server on %s: %s", self._config.host,
+        self.log.info("Server is listening on %s: %s", self._config.host,
                       self._config.port)
-        self.log.info("---------------------------")
         self._driver.listen(queue=self._queue_name,
                             preprocessor=self._get_preprocessor())
