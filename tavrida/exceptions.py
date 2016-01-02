@@ -5,6 +5,9 @@ DEFAULT_ERROR_MESSAGE = "Unknown error occured"
 
 
 class BaseException(Exception):
+    """
+    Base Tavrida exception
+    """
 
     _msg_template = DEFAULT_ERROR_MESSAGE
     _service_error_code = UNKNOWN_ERROR

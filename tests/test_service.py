@@ -181,8 +181,8 @@ class ServiceTestCase(unittest.TestCase):
         Tests request (IncomingRequestCall) handling when ackable
         exception raises
         """
-        self.service.method = mock.MagicMock(side_effect=
-                                             exceptions.BaseAckableException)
+        self.service.method = mock.MagicMock(
+            side_effect=exceptions.BaseAckableException)
         method = "method"
         request = mock.MagicMock(spec=messages.IncomingRequestCall)
         request.payload = {"param": "value"}
@@ -360,7 +360,7 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual(res, process_mock())
 
     @mock.patch.object(service.ServiceController, "_send")
-    def test_run_incoming_middlewares_for_request_and_rsponse(self, send_mock):
+    def test_incoming_middlewares_for_request_and_response(self, send_mock):
         """
         Tests run middlewares for request and sending the response
         """
@@ -376,7 +376,7 @@ class ServiceTestCase(unittest.TestCase):
         self.assertTupleEqual(result, (False, res))
 
     @mock.patch.object(service.ServiceController, "_send")
-    def test_run_incoming_middlewares_for_request_and_rsponse(self, send_mock):
+    def test_incoming_middlewares_for_request_and_error(self, send_mock):
         """
         Tests run middlewares for request and sending the error
         """
@@ -391,7 +391,7 @@ class ServiceTestCase(unittest.TestCase):
         send_mock.assert_called_once_with(middleware.process())
         self.assertTupleEqual(result, (False, res))
 
-    def test_run_incoming_middlewares_for_request_cast(self):
+    def test_incoming_middlewares_for_request_cast(self):
         """
         Tests run middlewares for request cast without response
         """
@@ -405,8 +405,7 @@ class ServiceTestCase(unittest.TestCase):
         middleware.process.assert_called_once_with(message)
         self.assertTupleEqual(result, (True, res))
 
-    def test_run_incoming_middlewares_for_request_cast_with_stop_processing(
-            self):
+    def test_incoming_middlewares_for_request_cast_with_stop_processing(self):
         """
         Tests run middlewares for request cast without response
         """

@@ -151,7 +151,7 @@ class RouterTestCase(unittest.TestCase):
                           message)
 
     @mock.patch.object(router.Router, "_check_if_response_suits")
-    def test_rpc_service_not_found_for_error(self, check_response):
+    def test_rpc_duplicated_registration_for_error(self, check_response):
         """
         Tests RPC service controller is registered multiple times for error
         """
@@ -167,7 +167,7 @@ class RouterTestCase(unittest.TestCase):
                           message)
 
     @mock.patch.object(router.Router, "_check_if_request_suits")
-    def test_rpc_service_not_found_for_request(self, check_request):
+    def test_rpc_duplicated_registration_for_request(self, check_request):
         """
         Tests RPC service controller is registered multiple times for request
         """
@@ -307,7 +307,7 @@ class RouterTestCase(unittest.TestCase):
         self.router.register(service_name, service_cls)
         self.router._process_rpc(message, service_cls, service_list)
         service_cls.get_dispatcher().process.assert_called_once_with(
-            message,  service_instance)
+            message, service_instance)
 
     def test_process_subscription(self):
         """
@@ -325,7 +325,7 @@ class RouterTestCase(unittest.TestCase):
         self.router._process_subscription(message, service_classes,
                                           service_list)
         A.get_dispatcher().process.assert_called_once_with(
-            message,  service_instance)
+            message, service_instance)
 
     @mock.patch.object(router.Router, "get_subscription_cls")
     @mock.patch.object(router.Router, "_process_subscription")
