@@ -160,7 +160,16 @@ class ServiceController(controller.AbstractController):
         return continue_processing, res
 
     def process(self, method, message, proxy):
+        """
+        Routes message to the handler method
 
+        :param method: name of method
+        :type method: string
+        :param message: incoming message
+        :type message: message.Message
+        :param proxy: proxy object to make calls to remote services
+        :type proxy: proxies.RPCProxy
+        """
         continue_processing, res = self._run_incoming_middlewares(message)
         if continue_processing:
             self._route_message_by_type(method, res, proxy)

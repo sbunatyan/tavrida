@@ -14,6 +14,15 @@ class Router(utils.Singleton, controller.AbstractController):
         return self._services
 
     def register(self, service_name, service_cls):
+        """
+        Registers Service class for given service name
+
+        :param service_name: name if service
+        :type service_name: string
+        :param service class:
+        :type service_cls: service.ServiceController
+        :return:
+        """
         ep_maps = set(tuple(ep_map.items()[0]) for ep_map in self._services)
         if not (service_name, service_cls) in ep_maps:
             self._services.append({service_name: service_cls})
@@ -29,6 +38,15 @@ class Router(utils.Singleton, controller.AbstractController):
 
     def get_rpc_service_cls(self, message):
 
+        """
+        Returns list of classes that are registered as handlers for message
+
+        :param message: incoming message
+        :type message: message.Message
+        :return: service class
+        :rtype: service.ServiceController
+        :raises: DuplicatedServiceRegistration, ServiceNotFound
+        """
         # find service classes in mappings ep -> srv_cls
         service_classes = []
         if isinstance(message, (messages.IncomingError,
@@ -51,6 +69,15 @@ class Router(utils.Singleton, controller.AbstractController):
             return service_classes[0]
 
     def get_subscription_cls(self, message):
+        """
+        Returns list of classes that have subscriptions for message source
+
+        :param message: incoming message
+        :type message: message.Message
+        :return: list of service classes
+        :rtype: list
+        """
+
         ep = message.source
         # find service classes in mappings ep -> srv_cls
         service_classes = []
@@ -66,6 +93,14 @@ class Router(utils.Singleton, controller.AbstractController):
         raise exceptions.UnknownService(service=str(service_cls))
 
     def reverse_lookup(self, service_cls):
+        """
+        Returns name of entry point service for which given class is registered
+
+        :param service_cls: service handler class
+        :type: service.ServiceController
+        :return: name of service
+        :rtype: string
+        """
         registered = False
         for rpc_mapping in self._services:
             for srv_name, srv_cls, in rpc_mapping.iteritems():
@@ -86,7 +121,14 @@ class Router(utils.Singleton, controller.AbstractController):
 
     def process(self, message, service_list):
         """
-        Return service class that defined for entry_point.
+        Processes message for some service from service list to corresponding
+        dispatcher
+
+        :param message: incoming message
+        :type message: message.Message
+        :param service_list: list of services.ServiceController objects
+        :type service_list: list
+        :return: messages.Message, dict, None
         """
         if isinstance(message, messages.IncomingNotification):
             service_classes = self.get_subscription_cls(message)

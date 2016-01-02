@@ -91,12 +91,16 @@ class Server(object):
             self._services.append(s(postproc))
 
     def run(self):
+        """
+        Starts server.
+        Creates all AMQP structures, instantiates service objects
+        and starts to listen AMQP server.
+        """
         self.log.info("Instantiating service classes")
         self._instantiate_services()
         self.log.info("Creating AMQP structures on Server")
         self._create_amqp_structures()
-        self.log.info("Starting server on %s: %s", self._config.host,
+        self.log.info("Server is running on %s: %s", self._config.host,
                       self._config.port)
-        self.log.info("---------------------------")
         self._driver.listen(queue=self._queue_name,
                             preprocessor=self._get_preprocessor())

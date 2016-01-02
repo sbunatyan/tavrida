@@ -38,12 +38,12 @@ class Dispatcher(controller.AbstractController):
         """
         Registers for given message type and entry_point a handler
 
-        :param entry_point: any EntryPoint object
+        :param entry_point: some Entry point
         :type entry_point: EntryPoint
         :param message_type: type of incoming message
         :type message_type: string
-        :param method_name: name of handler method
-        :type method_name: string
+        :param handler_method_name: name of handler method
+        :type handler_method_name: string
         """
         ep = str(entry_point)
         if ep in self._handlers[message_type]:
@@ -57,8 +57,8 @@ class Dispatcher(controller.AbstractController):
         """
         Return handler that defined for given entry_point and message_type
 
-        :param ep: any EntryPoint object
-        :type ep: EntryPoint
+        :param entry_point: some Entry point
+        :type entry_point: EntryPoint
         :param message_type: type of incoming message
         :type message_type: string
         :return:name of handler method
@@ -72,10 +72,20 @@ class Dispatcher(controller.AbstractController):
         return self._handlers[message_type][ep]
 
     def get_publishers(self):
+        """
+        Generates entry points for notifications
+
+        :return: generator of EntryPoints
+        """
         for ep in self.subscriptions.keys():
             yield entry_point.EntryPointFactory().create(ep)
 
     def get_request_entry_services(self):
+        """
+        Generates entry points for requests
+
+        :return: generator of EntryPoints
+        """
         for ep in self._handlers["request"].keys():
             yield entry_point.EntryPointFactory().create(ep).service
 
@@ -83,8 +93,7 @@ class Dispatcher(controller.AbstractController):
         """
         Defines by what header message should be dispatched
 
-        :param message: IncomingRequest, IncomingError, IncomingResponse,
-                        IncomingNotification
+        :param message: incoming message
         :type message: Message
         :return: corresponding EntryPoint
         :rtype: EntryPoint
@@ -98,6 +107,15 @@ class Dispatcher(controller.AbstractController):
             return message.destination.copy()
 
     def _get_source_context(self, message, service_instance):
+        """
+        Prepares 'source' value for RPC proxy
+
+        :param message: incoming message
+        :type message: Message
+        :param service_instance: Service controller instance
+        :type service_instance: service.ServiceController
+        :rtype: EntryPoint
+        """
         if isinstance(message, (messages.IncomingError,
                                 messages.IncomingResponse)):
             return message.destination
@@ -113,9 +131,7 @@ class Dispatcher(controller.AbstractController):
 
         :param service_instance: Service controller instance
         :type service_instance: service.ServiceController
-        :param ep: Source entry point
-        :type ep: entry_point.EntryPoint (or it's descendants)
-        :param message: message
+        :param message: incoming message
         :type message: messages.Message
         :return: RPCProxy to implement requests
         :rtype: proxies.RPCProxy
@@ -132,12 +148,12 @@ class Dispatcher(controller.AbstractController):
         Finds method to handle request and call service's 'process' method with
         method name, message and RPC proxy
 
-        :param message: Message (Request, Response, Error, Notification)
+        :param message: incoming message
         :type message: message.Message
-        :param service_instance:
-        :type service_instance:
+        :param service_instance: service
+        :type service_instance: services.ServiceController
         :return: service's response
-        :rtype: Message, dict, None
+        :rtype: messages.Message, dict, None
         """
         ep = self._get_dispatching_entry_point(message)
         method_name = self.get_handler(ep, message.type)
