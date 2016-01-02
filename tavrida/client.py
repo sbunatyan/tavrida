@@ -9,6 +9,17 @@ from tavrida import proxies
 
 class RPCClient(object):
 
+    """
+    Client to make RPC calls to remove service.
+    Calls are executed via service proxies.
+
+    >>> disc = discovery.LocalDiscovery("service_name", "service_exchange")
+    >>> additional_headers = {"header": "value"}
+    >>> cli = RPCClient(config, service="some_service", source="some_client",
+    >>> discovery=disc,headers=additional_headers)
+    >>> cli.some_method(some_parameter="1234").cast()
+    """
+
     def __init__(self, config, service, exchange=None, source="",
                  discovery=None, headers=None):
         super(RPCClient, self).__init__()

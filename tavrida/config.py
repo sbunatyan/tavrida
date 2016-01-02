@@ -4,6 +4,10 @@ import pika
 
 class Credentials(object):
 
+    """
+    Credentials (username, password) to connect to RabbitMQ.
+    """
+
     def __init__(self, username, password):
         super(Credentials, self).__init__()
         self.username = username
@@ -11,6 +15,10 @@ class Credentials(object):
 
 
 class ConnectionConfig(object):
+    """
+    Config to connect to RabbitMQ.
+    Most of the parameters are passed to pika client as is.
+    """
 
     def __init__(self, host, credentials, port=5672, virtual_host="/",
                  channel_max=None,
@@ -38,9 +46,19 @@ class ConnectionConfig(object):
         self.async_engine = async_engine
 
     def to_dict(self):
+        """
+        Returns dictionary of parameters
+        :return: dict of params
+        :rtype: dict
+        """
         return copy.copy(self.__dict__)
 
     def to_pika_params(self):
+        """
+        Returns pika connection parameters
+        :return: pika connection paraneters
+        :rtype: pika.ConnectionParameters
+        """
         params = self.to_dict()
         params["credentials"] = pika.PlainCredentials(
             self.credentials.username, self.credentials.password)
