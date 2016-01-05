@@ -67,6 +67,9 @@ class ServiceController(controller.AbstractController):
     def _run_outgoing_middlewares(self, result):
         for mld in self._outgoing_middlewares:
             result = mld.process(result)
+            if not (isinstance(result, messages.Outgoing)
+               and isinstance(result, messages.Message)):
+                raise exceptions.IncorrectOutgoingMessage(message=result)
         return result
 
     def _send(self, message):
@@ -157,7 +160,15 @@ class ServiceController(controller.AbstractController):
         continue_processing = True
         res = message
         for mld in self._incoming_middlewares:
-            res = mld.process(res)
+            try:
+                res = mld.process(res)
+            except Exception as e:
+                if isinstance(message, messages.IncomingRequestCall):
+                    res = messages.Error.create_by_request(message, e)
+
+            if not isinstance(res, (messages.Response, messages.Error,
+                                    messages.IncomingRequest)):
+                raise exceptions.IncorrectMessage(message=res)
 
             if isinstance(res, (messages.Response, messages.Error)):
                 continue_processing = False

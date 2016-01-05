@@ -90,7 +90,7 @@ class IncorrectAMQPConfig(BaseException):
 
 class WrongResponse(BaseException):
 
-    _msg_template = ("Got incorrect response %(response)s. sResponse should "
+    _msg_template = ("Got incorrect response %(response)s. Response should "
                      "be of types: Response, Error, dict.")
     _service_error_code = 1009
 
@@ -152,3 +152,19 @@ class ForbiddenHeaders(BaseException):
 class SubscriptionHandlerNotFound(BaseAckableException):
     _msg_template = "Subscription handler for %(entry_point)s is not found"
     _service_error_code = 1030
+
+
+class IncorrectOutgoingMessage(BaseException):
+
+    _msg_template = ("Got incorrect outgoing message %(message)s. "
+                     "Message should "
+                     "be of types: Request, Response, Error, Notification")
+    _service_error_code = 1031
+
+
+class IncorrectMessage(BaseException):
+
+    _msg_template = ("Got incorrect message %(message)s. "
+                     "Message should "
+                     "be of types: IncomingRequest, Response, Error")
+    _service_error_code = 1031
