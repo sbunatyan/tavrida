@@ -51,6 +51,9 @@ If exception is raised in middleware it is automatically converted to :class:`ta
 Outgoing Middlewares
 --------------------
 
+Outgoing middlewares are **NOT** called while executing call via proxy object.
+
+
 Example how to add outgoing middleware:
 
 .. code-block:: python
@@ -76,7 +79,7 @@ Example how to add outgoing middleware:
         def handler(self, request, proxy, param):
             return {"parameter": "value"}
 
-By default outgoing middleware takes Request, Response, Error or Notification message.
+By default outgoing middleware takes Response or Error message.
 
 The result value of outgoing middleware should be of the same type. Otherwise exception is raised.
 
