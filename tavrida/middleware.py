@@ -5,7 +5,8 @@ class Middleware(controller.AbstractMessageController):
 
     """
     Base middleware class. Any middleware should be inherited from this class.
-    Middlewares could be added to message preprocessing or postprocessing.
+    Middlewares could be added for processing message before and after the
+    handler call.
     """
 
     def process(self, message):

@@ -15,7 +15,7 @@ class RPCClient(object):
 
     >>> disc = discovery.LocalDiscovery("service_name", "service_exchange")
     >>> additional_headers = {"header": "value"}
-    >>> cli = RPCClient(config, service="some_service", source="some_client",
+    >>> cli = RPCClient(config, service="service_name", source="some_client",
     >>> discovery=disc,headers=additional_headers)
     >>> cli.some_method(some_parameter="1234").cast()
     """
