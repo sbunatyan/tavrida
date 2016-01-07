@@ -60,7 +60,8 @@ class ServiceTestCase(unittest.TestCase):
         Tests outgoing middlewares are run
         """
         middleware = mock.MagicMock()
-        result = mock.MagicMock()
+        middleware.process.return_value = mock.MagicMock(spec=messages.Error)
+        result = mock.MagicMock(spec=messages.Response)
         self.service.add_outgoing_middleware(middleware)
         res = self.service._run_outgoing_middlewares(result)
         middleware.process.assert_called_once_with(result)
@@ -397,7 +398,7 @@ class ServiceTestCase(unittest.TestCase):
         """
         middleware = mock.MagicMock()
         self.service.add_incoming_middleware(middleware)
-        res = mock.MagicMock(spec=list)
+        res = mock.MagicMock(spec=messages.IncomingRequestCast)
         middleware.process = mock.MagicMock(return_value=res)
 
         message = mock.MagicMock(spec=messages.IncomingRequestCast)
