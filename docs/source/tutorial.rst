@@ -1,5 +1,5 @@
-Tavrida Tutorial
-================
+Tutorial
+========
 
 Request Handling
 ----------------
@@ -150,7 +150,7 @@ Service Hello
 Service World
 +++++++++++++
 
-Steps to implement the world service are pretty similar to the previous example.
+Steps to implement the World service are pretty similar to the previous example.
 The only difference is remote service registration (test_hello) and binding the discovery object to service controller.
 In this example remote service registration is needed to send responses and error messages to test_hello service.
 
@@ -196,11 +196,11 @@ In this example remote service registration is needed to send responses and erro
 Publication and Subscription
 ----------------------------
 
-1. Declare Hello service controller
-2. In any request handler (or single script) use proxy to publish notification
-
 Hello Service (publisher)
 +++++++++++++++++++++++++
+
+1. Declare Hello service controller
+2. In any request handler (or single script) use proxy to publish notification
 
 .. code-block:: python
     :linenos:
@@ -237,11 +237,11 @@ Hello Service (publisher)
                             service_list=[HelloController])
         srv.run()
 
-1. Declare World service controller
-2. Define subscription method
-
 World service (subscriber)
 ++++++++++++++++++++++++++
+
+1. Declare World service controller
+2. Define subscription method
 
 .. code-block:: python
     :linenos:
