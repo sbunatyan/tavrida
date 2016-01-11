@@ -6,7 +6,13 @@
 Welcome to Tavrida's documentation!
 ===================================
 
-Contents:
+Source
+------
+
+https://github.com/sbunatyan/tavrida
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 1
@@ -22,7 +28,7 @@ Contents:
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
@@ -30,7 +36,7 @@ Indices and tables
 
 
 Brief service example
-=====================
+---------------------
 
 .. code-block:: python
     :linenos:
