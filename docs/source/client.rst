@@ -1,7 +1,7 @@
 Client
 ======
 
-To execute calls from third-part applications use :class:`tavrida.client.RPCClient` object.
+To execute calls from third-party applications use :class:`tavrida.client.RPCClient` object.
 
 Client parameters
 -----------------
@@ -10,7 +10,7 @@ Client parameters
 
 * You can pass additional *header* parameters to the remote service.
 
-There are several ways to create ans use client.
+There are several ways to create and use client.
 
 .. code-block:: python
     :linenos:

@@ -61,4 +61,42 @@ There 4 types of incoming messages:
 :class:`tavrida.messages.Request`,
 :class:`tavrida.messages.Response`,
 :class:`tavrida.messages.Error`,
-:class:`tavrida.messages.Notification` and there structure is the same as fro incoming messages.
+:class:`tavrida.messages.Notification` and their structure is the same as for incoming messages.
+
+Under the hood
+--------------
+
+Messages are transported via RabbitMQ. Message headers are fair RabbitMQ headers:
+correlation_id, request_id, message_id, message_type, reply_to, source, source, destination.
+
+Message payload is a valid JSON object that consists of 2 sub-objects:
+
+.. code-block:: python
+    :linenos:
+{
+    "context": {"some_key": "some_value"},
+    "payload": {"parameter": "value"}
+}
+
+**context** holds arbitrary values. By default it is filled with the payload values and is updated after each request.
+That means that if you have a chain of 2 calls: service A -> service B -> service C, context will hold incoming parameters for both calls.
+But if at any hop parameter names are equal, the old value is overwritten by the new one.
+Actually context is just a python dict that is updated with "update" method.
+
+
+**payload** holds custom parameters that defined in handler. Names of payload keys should be equal to names of handler parameters.
+If you have a handler:
+
+.. code-block:: python
+    :linenos:
+
+    @dispatcher.rpc_method(service="test_hello", method="hello")
+    def handler(self, request, proxy, param1, param1):
+        return {"param3": "value3"}
+
+your payload should look like:
+
+.. code-block:: python
+    :linenos:
+
+     "payload": {"param1": "value1", "param2": "value2"}

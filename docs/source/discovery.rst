@@ -8,7 +8,7 @@ Discovery types
 
 It holds 3 types of pairs *service_name:service_exchange*:
 
-1. For remote service. Is used to send requests, responses, errors ro remote service.
+1. For remote service. Is used to send requests, responses, errors to remote service.
 2. For remote service publisher. Is used to subscribe for notifications from remote service.
 3. For local service publisher. Is used to publish notifications by local service.
 
@@ -21,12 +21,12 @@ To register all types of services use the example:
 
     disc = discovery.LocalDiscovery()
 
-    # register remote service's exchange to send there requests,
+    # register remote service's exchange to send equests,
     # responses, errors
     disc.register_remote_service("remote_service", "remote_service_exchange")
 
-    # register service's notification exchange to publish notifications
-    # Service 'local_service' publishes notifications to it's exchange
+    # register service notification exchange to publish notifications
+    # Service 'local_service' publishes notifications to its exchange
     # 'local_service_exchange'
     disc.register_local_publisher("local_service", "local_service_exchange")
 
@@ -56,7 +56,7 @@ Therefore if you have multiple services and subsequently multiple discovery obje
 Discovery for proxy
 -------------------
 
-Besides that you should provide discovery object while creation RPC client object.
+Besides that you should provide discovery object while creation :class:`tavrida.client.RPCClient` object.
 
 .. code-block:: python
     :linenos:

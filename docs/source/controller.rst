@@ -21,7 +21,7 @@ decorate with :func:`tavrida.dispatcher.rpc_service` decorator
 Request handler can return 2 type of responses (dict, :class:`tavrida.messages.Response`, :class:`tavrida.messages.Error`) or None value.
 
 If dict is returned it will be converted to the :class:`tavrida.messages.Response` object.
-If any exception raises during message processing this exception is converted to :class:`tavrida.messages.Error` object.
+If any exception raises during message processing it is converted to :class:`tavrida.messages.Error` object.
 
 But you can, of course, return :class:`tavrida.messages.Response` or :class:`tavrida.messages.Error` object explicitly.
 
@@ -46,7 +46,7 @@ Handlers are methods of service controllers that are called on message (
 :class:`tavrida.messages.IncomingError` error,
 :class:`tavrida.messages.IncomingNotification` notification) arrival.
 
-Each handler is binded to :class:`tavrida.entry_point.EntryPoint` which can be considered as an address to deliver the message.
+Each handler is bound to :class:`tavrida.entry_point.EntryPoint` which can be considered as an address to deliver the message.
 
 Each handler receives two parameters (at first two positions): message and :class:`tavrida.proxies.RPCProxy`.
 Class of incoming message depends on handler type. Using :class:`tavrida.proxies.RPCProxy` object you

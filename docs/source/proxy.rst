@@ -11,9 +11,9 @@ Proxy parameters
 * You can pass optional *correlation_id* parameter.
 If remote service executes the second call to the next service correlation_id will be the same.
 
-* To the *call* or *cast* method you can pass *correlation_id*, *context*, *source* values.
+* To the :func:`call` or :func:`cast` method you can pass *correlation_id*, *context*, *source* values.
 
-* To the *call* method you can provide *reply_to* parameter.
+* To the :func:`call` method you can provide *reply_to* parameter.
 
 * You can add header parameter to the proxy using *add_headers* method
 

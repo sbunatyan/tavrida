@@ -7,7 +7,7 @@ Middleware is a simple class inherited from :class:`tavrida.middleware.Middlewar
 
 This method takes message and returns the result message for the next middleware.
 
-When you add midlleware it is placed in the list and therefore the addition order is significant.
+When you add middleware it is placed in the list and therefore the addition order is significant.
 
 Incoming Middlewares
 --------------------
@@ -79,7 +79,7 @@ Example how to add outgoing middleware:
         def handler(self, request, proxy, param):
             return {"parameter": "value"}
 
-By default outgoing middleware takes Response or Error message.
+By default outgoing middleware takes :class:`tavrida.messages.Response` or :class:`tavrida.messages.Error` message.
 
 The result value of outgoing middleware should be of the same type. Otherwise exception is raised.
 
