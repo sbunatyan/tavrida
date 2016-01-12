@@ -72,11 +72,11 @@ correlation_id, request_id, message_id, message_type, reply_to, source, source, 
 Message payload is a valid JSON object that consists of 2 sub-objects:
 
 .. code-block:: python
-    :linenos:
-{
-    "context": {"some_key": "some_value"},
-    "payload": {"parameter": "value"}
-}
+
+    {
+        "context": {"some_key": "some_value"},
+        "payload": {"parameter": "value"}
+    }
 
 **context** holds arbitrary values. By default it is filled with the payload values and is updated after each request.
 That means that if you have a chain of 2 calls: service A -> service B -> service C, context will hold incoming parameters for both calls.
@@ -88,7 +88,6 @@ Actually context is just a python dict that is updated with "update" method.
 If you have a handler:
 
 .. code-block:: python
-    :linenos:
 
     @dispatcher.rpc_method(service="test_hello", method="hello")
     def handler(self, request, proxy, param1, param1):
@@ -97,6 +96,5 @@ If you have a handler:
 your payload should look like:
 
 .. code-block:: python
-    :linenos:
 
      "payload": {"param1": "value1", "param2": "value2"}
