@@ -2,10 +2,10 @@ import unittest
 
 import mock
 
-from tavrida import config
 from tavrida.amqp_driver import driver
-from tavrida.amqp_driver import pika_sync
 from tavrida.amqp_driver import pika_async
+from tavrida.amqp_driver import pika_sync
+from tavrida import config
 
 
 class AMQPDriverSyncAndAsyncTestCase(unittest.TestCase):

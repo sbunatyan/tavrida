@@ -84,7 +84,7 @@ class ServiceController(controller.AbstractController):
         for mld in self._outgoing_middlewares:
             result = mld.process(result)
             if not (isinstance(result, messages.Outgoing)
-               and isinstance(result, messages.Message)):
+                    and isinstance(result, messages.Message)):
                 raise exceptions.IncorrectOutgoingMessage(message=result)
         return result
 

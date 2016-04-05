@@ -1,11 +1,11 @@
+import logging
+
 from tavrida import config
 from tavrida import discovery
 from tavrida import dispatcher
 from tavrida import server
 from tavrida import service
 
-
-import logging
 
 logging.basicConfig(level=logging.INFO)
 

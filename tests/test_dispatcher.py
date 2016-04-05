@@ -3,9 +3,9 @@ import unittest
 import mock
 
 from tavrida import dispatcher
-from tavrida import messages
 from tavrida import entry_point
 from tavrida import exceptions
+from tavrida import messages
 from tavrida import router
 from tavrida import service
 

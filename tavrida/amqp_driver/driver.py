@@ -1,5 +1,5 @@
-import pika_sync
 import pika_async
+import pika_sync
 
 
 class AMQPDriver(object):

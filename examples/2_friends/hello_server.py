@@ -1,12 +1,12 @@
 import logging
 
-logging.basicConfig(level=logging.INFO)
-
 from tavrida import config
 from tavrida import discovery
 from tavrida import dispatcher
 from tavrida import server
 from tavrida import service
+
+logging.basicConfig(level=logging.INFO)
 
 
 @dispatcher.rpc_service("test_hello")
