@@ -34,7 +34,8 @@ class PreProcessor(controller.AbstractController):
         self._service_list = service_list
         self._steps = [
             steps.ValidateMessageMiddleware(),
-            steps.CreateMessageMiddleware()
+            steps.CreateMessageMiddleware(),
+            steps.LogIncomingAMQPMessageMiddleware()
         ]
 
     def process(self, amqp_message):

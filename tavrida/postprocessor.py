@@ -36,6 +36,7 @@ class PostProcessor(controller.AbstractController):
         self._steps = [
             steps.CreateAMQPMiddleware(),
             steps.ValidateMessageMiddleware(),
+            steps.LogOutgoingAMQPMessageMiddleware(),
         ]
 
     def process(self, message_obj):
