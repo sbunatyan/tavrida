@@ -12,19 +12,6 @@ Client parameters
 
 There are several ways to create and use client.
 
-.. code-block:: python
-    :linenos:
-
-    from tavrida import client
-    from tavrida import config
-
-    creds = config.Credentials("guest", "guest")
-    conf = config.ConnectionConfig("localhost", credentials=creds)
-
-    cli = client.RPCClient(config=conf, service="remote_service",
-                           exchange="remote_exchange",
-                           source="source_application")
-    cli.hello(param=123).cast(correlation_id="123-456")
 
 .. code-block:: python
     :linenos:
