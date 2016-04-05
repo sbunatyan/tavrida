@@ -32,30 +32,39 @@ There are several ways to create and use client.
     from tavrida import client
     from tavrida import config
     from tavrida import discovery
+    from tavrida import entry_point
 
     creds = config.Credentials("guest", "guest")
     conf = config.ConnectionConfig("localhost", credentials=creds)
 
+    # You should provide discovery service object to client
     disc = discovery.LocalDiscovery()
-    disc.register_remote_service(service_name="remote_service",
-                                 exchange_name="remote_exchange")
+    disc.register_remote_service(service_name="test_hello",
+                                 exchange_name="test_exchange")
 
-    cli = client.RPCClient(config=conf, service="remote_service",
-                           source="source_application")
-    cli.hello(param=123).cast(correlation_id="123-456")
+    cli = client.RPCClient(config=conf, discovery=disc, source=source)
+    cli.test_hello.hello(param=123).cast(correlation_id="123-456")
+
 
 .. code-block:: python
     :linenos:
 
     from tavrida import client
     from tavrida import config
+    from tavrida import discovery
     from tavrida import entry_point
 
     creds = config.Credentials("guest", "guest")
     conf = config.ConnectionConfig("localhost", credentials=creds)
 
-    source = entry_point.Source("client", "method")
-    cli = client.RPCClient(config=conf, service="remote_service",
-                           exchange="remote_exchange", source=source,
-                           headers={"aaa": "bbb"})
-    cli.hello(param=123).cast()
+    # You should provide discovery service object to client
+    disc = discovery.LocalDiscovery()
+    disc.register_remote_service(service_name="test_hello",
+                                 exchange_name="test_exchange")
+
+    # If you want to provide source as a string
+    cli = client.RPCClient(config=conf, discovery=disc, source="source_service")
+    cli.test_hello.hello(param=123).cast(correlation_id="123-456")
+
+    cli = client.RPCClient(config=conf, discovery=disc, source="source.method")
+    cli.test_hello.hello(param=123).cast(correlation_id="123-456")

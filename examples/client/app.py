@@ -10,24 +10,17 @@ conf = config.ConnectionConfig("localhost", credentials=creds)
 source = entry_point.Source("client", "method")
 
 
-cli = client.RPCClient(config=conf, service="test_hello",
-                       exchange="test_exchange", source=source,
-                       headers={"aaa": "bbb"})
-cli.hello(param=123).cast(correlation_id="123-456")
-
-# Or if you want to provide source as a string
-cli = client.RPCClient(config=conf, service="test_hello",
-                       exchange="test_exchange", source="source_service")
-cli.hello(param=123).cast(correlation_id="123-456")
-
-cli = client.RPCClient(config=conf, service="test_hello",
-                       exchange="test_exchange", source="source.method")
-cli.hello(param=123).cast(correlation_id="123-456")
-
-# Also you can provide discovery service object to client
+# You should provide discovery service object to client
 disc = discovery.LocalDiscovery()
 disc.register_remote_service(service_name="test_hello",
                              exchange_name="test_exchange")
-cli = client.RPCClient(config=conf, service="test_hello", discovery=disc,
-                       source=source)
-cli.hello(param=123).cast(correlation_id="123-456")
+
+cli = client.RPCClient(config=conf, discovery=disc, source=source)
+cli.test_hello.hello(param=123).cast(correlation_id="123-456")
+
+# If you want to provide source as a string
+cli = client.RPCClient(config=conf, discovery=disc, source="source_service")
+cli.test_hello.hello(param=123).cast(correlation_id="123-456")
+
+cli = client.RPCClient(config=conf, discovery=disc, source="source.method")
+cli.test_hello.hello(param=123).cast(correlation_id="123-456")

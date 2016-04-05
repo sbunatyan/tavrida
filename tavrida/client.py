@@ -29,32 +29,24 @@ class RPCClient(object):
     Client to make RPC calls to remove service.
     Calls are executed via service proxies.
 
-    >>> disc = discovery.LocalDiscovery("service_name", "service_exchange")
-    >>> additional_headers = {"header": "value"}
-    >>> cli = RPCClient(config, service="service_name", source="some_client",
-    >>> discovery=disc,headers=additional_headers)
+    >>> from tavrida import config
+    >>> credentials = config.Credentials("username", "password")
+    >>> config = config.ConnectionConfig("localhost", credentials)
+    >>> disc = discovery.LocalDiscovery()
+    >>> disc.register_remote_service("service_name", "service_exchange")
+    >>> headers = {"header": "value"}
+    >>> cli = RPCClient(config, disc, source="some_client", headers=headers)
     >>> cli.some_method(some_parameter="1234").cast()
     """
 
-    def __init__(self, config, service, exchange=None, source="",
-                 discovery=None, headers=None):
+    def __init__(self, config, discovery, source="", context=None,
+                 headers=None):
         super(RPCClient, self).__init__()
         self._config = config
-        self._service = service
-        self._exchange = exchange
+        self._discovery = discovery
         self._source = source
         self._headers = copy.copy(headers) or {}
-
-        if exchange and discovery:
-            raise ValueError("You should define either discovery or exchange "
-                             "but not both")
-
-        if exchange:
-            self._discovery = self._get_discovery()
-            self._discovery.register_remote_service(self._service,
-                                                    self._exchange)
-        else:
-            self._discovery = discovery
+        self._context = copy.copy(context) if context else None
 
     def _get_discovery(self):
         return discovery.LocalDiscovery()
@@ -73,6 +65,6 @@ class RPCClient(object):
             source = entry_point.EntryPointFactory().create(self._source)
 
         postproc = self._get_postprocessor()
-        proxy = proxies.RPCServiceProxy(postproc, self._service, source,
-                                        headers=self._headers)
+        proxy = proxies.RPCProxy(postproc, source,
+                                 context=self._context, headers=self._headers)
         return getattr(proxy, item)
