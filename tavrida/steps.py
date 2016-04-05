@@ -75,7 +75,7 @@ class LoggingMiddleware(controller.AbstractController):
 
 
 class LogIncomingAMQPMessageMiddleware(LoggingMiddleware):
-    """Writes AMQP headers and body to log with level INFO.
+    """Writes AMQP headers and body to log with level DEBUG.
 
     Hides values of SENSITIVE_HEADERS.
 
@@ -92,7 +92,7 @@ class LogIncomingAMQPMessageMiddleware(LoggingMiddleware):
 
 
 class LogOutgoingAMQPMessageMiddleware(LoggingMiddleware):
-    """Writes AMQP headers and body to log with level INFO.
+    """Writes AMQP headers and body to log with level DEBUG.
 
     Hides values of SENSITIVE_HEADERS.
 

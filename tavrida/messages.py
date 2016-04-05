@@ -146,6 +146,10 @@ class Message(object):
         return self._payload
 
     @property
+    def body(self):
+        return self.payload
+
+    @property
     def type(self):
         return self.message_type
 
