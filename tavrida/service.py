@@ -117,11 +117,11 @@ class ServiceController(controller.AbstractController):
             if isinstance(request, messages.IncomingRequestCall):
                 return result
         except Exception as e:
-            self.log.exception(e)
-            if not isinstance(e, exceptions.BaseAckableException):
-                e = exceptions.BaseException()
             if isinstance(request, messages.IncomingRequestCall):
+                self.log.exception(e)
                 return messages.Error.create_by_request(request, exception=e)
+            else:
+                raise
 
     def _process_request(self, method, request, proxy):
         """

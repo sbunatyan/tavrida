@@ -6,6 +6,7 @@ import mock
 from tavrida import exceptions
 from tavrida import messages
 from tavrida import service
+from tavrida import utils
 
 
 class ServiceTestCase(unittest.TestCase):
@@ -173,7 +174,7 @@ class ServiceTestCase(unittest.TestCase):
                                                     **filter_mock())
         self.assertIsInstance(res, messages.Error)
         self.assertEqual(res.payload["class"],
-                         exceptions.BaseException.__name__)
+                         utils.get_fqcn(Exception()))
 
     @mock.patch.object(service.ServiceController,
                        "_filter_redundant_parameters")
@@ -199,7 +200,7 @@ class ServiceTestCase(unittest.TestCase):
                                                     **filter_mock())
         self.assertIsInstance(res, messages.Error)
         self.assertEqual(res.payload["class"],
-                         exceptions.BaseAckableException.__name__)
+                         utils.get_fqcn(exceptions.BaseAckableException()))
 
     @mock.patch.object(service.ServiceController, "_handle_request")
     @mock.patch.object(service.ServiceController, "_run_outgoing_middlewares")

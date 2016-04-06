@@ -56,6 +56,14 @@ class BaseAckableException(BaseException, AckableException):
     pass
 
 
+class NackableException(object):
+    pass
+
+
+class BaseNackableException(BaseException, NackableException):
+    pass
+
+
 class FieldMustExist(BaseAckableException):
 
     _msg_template = "Field %(field)s must exists in message"

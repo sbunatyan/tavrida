@@ -264,9 +264,7 @@ class Reader(BasePikaAsync, base.AbstractReader):
             self.preprocessor.process(msg)
         except Exception as e:
             self.log.exception(e)
-            if not isinstance(e, exceptions.BaseException):
-                self._channel.basic_ack(frame.delivery_tag)
-            elif not isinstance(e, exceptions.AckableException):
+            if isinstance(e, exceptions.NackableException):
                 self._channel.basic_reject(frame.delivery_tag)
             else:
                 self._channel.basic_ack(frame.delivery_tag)

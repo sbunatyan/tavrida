@@ -30,3 +30,13 @@ class Singleton(object):
             cls._instance = (super(Singleton, cls)
                              .__new__(cls, *args, **kwargs))
         return cls._instance
+
+
+def get_fqcn(obj):
+    """Get %(module_path)s.%(class_name)s of an object.
+
+    FQCN stands for Fully Qualified Class Name.
+    """
+    return "%(module_path)s.%(class_name)s" % dict(
+        module_path=obj.__class__.__module__,
+        class_name=obj.__class__.__name__)

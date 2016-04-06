@@ -21,6 +21,7 @@ import uuid
 
 import entry_point
 import exceptions
+import utils
 
 
 class AMQPMessage(object):
@@ -303,10 +304,10 @@ class Error(BaseError, Outgoing):
         try:
             code = exception.code
         except AttributeError:
-            code = None
+            code = exceptions.UNKNOWN_ERROR
 
         payload = {
-            "class": exception.__class__.__name__,
+            "class": utils.get_fqcn(exception),
             "message": str(exception),
             "code": code
         }
