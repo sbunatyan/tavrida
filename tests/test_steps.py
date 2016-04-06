@@ -102,6 +102,7 @@ class LogIncomingAMQPMessageMiddlewareTestCase(
         message = mock.MagicMock()
         message.headers = 'headers'
         message.body = 'body'
+        message.delivery_tag = 'delivery_tag'
 
         with mock.patch.object(self._middleware,
                                '_hide_sensitive_data',

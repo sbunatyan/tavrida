@@ -52,8 +52,8 @@ class EntryPoint(object):
         return (self.service == other.service and
                 self.method == other.method)
 
-    def hash(self):
-        return str(self)
+    def __hash__(self):
+        return hash(str(self))
 
     def to_routing_key(self):
         return str(self)

@@ -57,17 +57,31 @@ class Reader(PikaClient, base.AbstractReader):
                 self._current_reconnect_attempt += 1
                 self.run()
 
+    def _ack(self, frame):
+        self.log.debug("Starting ack frame with delivery tag %s",
+                       frame.delivery_tag)
+        self._channel.basic_ack(frame.delivery_tag)
+        self.log.debug("Acked frame with delivery tag %s",
+                       frame.delivery_tag)
+
+    def _reject(self, frame):
+        self.log.debug("Starting reject frame with delivery tag %s",
+                       frame.delivery_tag)
+        self._channel.basic_reject(frame.delivery_tag)
+        self.log.debug("Rejected frame with delivery tag %s",
+                       frame.delivery_tag)
+
     def _on_message(self, msg, frame):
         try:
             self.preprocessor.process(msg)
         except Exception as e:
             self.log.exception(e)
             if isinstance(e, exceptions.NackableException):
-                self._channel.basic_reject(frame.delivery_tag)
+                self._reject(frame)
             else:
-                self._channel.basic_ack(frame.delivery_tag)
+                self._ack(frame)
         else:
-            self._channel.basic_ack(frame.delivery_tag)
+            self._ack(frame)
 
     def stop(self):
         self.close_connection()
