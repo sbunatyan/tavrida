@@ -56,6 +56,10 @@ class PostProcessor(controller.AbstractController):
     def discovery_service(self):
         return self._discovery
 
+    @property
+    def driver(self):
+        return self._driver
+
     def set_discovery(self, discovery):
         self._discovery = discovery
 

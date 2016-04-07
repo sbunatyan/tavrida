@@ -11,11 +11,12 @@ class AMQPDriver(object):
             self._engine = pika_async
         self._config = config
         self._reader = None
+        self._writer = None
 
-    def get_reader(self, queue, preprocessor=None):
+    def create_reader(self, queue, preprocessor=None):
         return self._engine.Reader(self._config, queue, preprocessor)
 
-    def get_writer(self):
+    def create_writer(self):
         return self._engine.Writer(self._config)
 
     def _get_blocking_writer(self):
@@ -39,12 +40,20 @@ class AMQPDriver(object):
 
     def publish_message(self, exchange, routing_key, message):
         if self._reader:
-            self._reader.publish_message(exchange, routing_key, message)
+            self._writer = self._reader
         else:
-            writer = self.get_writer()
-            writer.publish_message(exchange, routing_key, message)
+            self._writer = self.create_writer()
+        self._writer.publish_message(exchange, routing_key, message)
 
     def listen(self, queue, preprocessor=None):
-        reader = self.get_reader(queue, preprocessor)
+        reader = self.create_reader(queue, preprocessor)
         self._reader = reader
         reader.run()
+
+    @property
+    def reader(self):
+        return self._reader
+
+    @property
+    def writer(self):
+        return self._writer

@@ -38,7 +38,7 @@ class AMQPDriverSyncAndAsyncTestCase(unittest.TestCase):
         drvr = driver.AMQPDriver(conf)
         queue = "queue_name"
         preprocessor = mock.Mock()
-        reader = drvr.get_reader(queue, preprocessor)
+        reader = drvr.create_reader(queue, preprocessor)
         self.assertEqual(reader, engine_mock())
 
     @mock.patch.object(pika_sync, "Writer")
@@ -50,7 +50,7 @@ class AMQPDriverSyncAndAsyncTestCase(unittest.TestCase):
 
         conf = config.ConnectionConfig(self.host, self.credentials)
         drvr = driver.AMQPDriver(conf)
-        writer = drvr.get_writer()
+        writer = drvr.create_writer()
         self.assertEqual(writer, engine_mock())
 
     def test_driver_uses_pika_async_engine(self):
@@ -76,7 +76,7 @@ class AMQPDriverSyncAndAsyncTestCase(unittest.TestCase):
         drvr = driver.AMQPDriver(conf)
         queue = "queue_name"
         preprocessor = mock.Mock()
-        reader = drvr.get_reader(queue, preprocessor)
+        reader = drvr.create_reader(queue, preprocessor)
         self.assertEqual(reader, engine_mock())
 
     @mock.patch.object(pika_async, "Writer")
@@ -89,7 +89,7 @@ class AMQPDriverSyncAndAsyncTestCase(unittest.TestCase):
         conf = config.ConnectionConfig(self.host, self.credentials,
                                        async_engine=True)
         drvr = driver.AMQPDriver(conf)
-        writer = drvr.get_writer()
+        writer = drvr.create_writer()
         self.assertEqual(writer, engine_mock())
 
 
@@ -157,7 +157,7 @@ class AMQPDriverTestCase(unittest.TestCase):
         self.driver._reader.publish_message.assert_called_once_with(
             exchange, routing_key, message)
 
-    @mock.patch.object(driver.AMQPDriver, "get_writer")
+    @mock.patch.object(driver.AMQPDriver, "create_writer")
     def test_publish_message_via_new_writer(self, mock_get_writer):
 
         """
@@ -171,7 +171,7 @@ class AMQPDriverTestCase(unittest.TestCase):
         mock_get_writer().publish_message.assert_called_once_with(
             exchange, routing_key, message)
 
-    @mock.patch.object(driver.AMQPDriver, "get_reader")
+    @mock.patch.object(driver.AMQPDriver, "create_reader")
     def test_listen_starts(self, mock_get_reader):
 
         """

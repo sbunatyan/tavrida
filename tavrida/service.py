@@ -18,6 +18,7 @@ import abc
 import copy
 import logging
 
+from amqp_driver import pika_async
 import controller
 import dispatcher
 import exceptions
@@ -79,6 +80,19 @@ class ServiceController(controller.AbstractController):
         :type middleware: middleware.Middleware
         """
         self._outgoing_middlewares.append(middleware)
+
+    def send_heartbeat(self):
+        reader = self.postprocessor.driver.reader
+        if isinstance(reader, pika_async.Reader):
+            self.log.warning("Pika is unable to send heartbeats in async mode")
+        else:
+            conn = reader.connection
+            try:
+                conn.process_data_events()
+                return True
+            except Exception as e:
+                self.log.exception(e)
+                return False
 
     def _run_outgoing_middlewares(self, result):
         for mld in self._outgoing_middlewares:

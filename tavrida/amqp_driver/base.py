@@ -23,6 +23,10 @@ class AbstractClient(object):
     def close_connection(self):
         pass
 
+    @property
+    def connection(self):
+        return self._connection
+
 
 class AbstractReader(AbstractClient):
 
