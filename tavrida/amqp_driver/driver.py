@@ -1,3 +1,5 @@
+import logging
+
 import pika_async
 import pika_sync
 
@@ -12,6 +14,7 @@ class AMQPDriver(object):
         self._config = config
         self._reader = None
         self._writer = None
+        self.log = logging.getLogger(__name__)
 
     def create_reader(self, queue, preprocessor=None):
         return self._engine.Reader(self._config, queue, preprocessor)
@@ -57,3 +60,15 @@ class AMQPDriver(object):
     @property
     def writer(self):
         return self._writer
+
+    def send_heartbeat_via_reader(self):
+        if isinstance(self.reader, pika_async.Reader):
+            self.log.warning("Pika is unable to send heartbeats in async mode")
+        else:
+            conn = self.reader.connection
+            try:
+                conn.process_data_events()
+                return True
+            except Exception as e:
+                self.log.exception(e)
+                return False
