@@ -194,9 +194,11 @@ class LocalDiscovery(AbstractDiscovery):
 
     def get_all_exchanges(self):
         return {
-            'remote': self._remote_registry.values(),
-            'remote_publisher': self._remote_publisher_registry.values(),
-            'local_publisher': self._local_publisher_registry.values()
+            'remote': list(set(self._remote_registry.values())),
+            'remote_publisher': list(set(
+                self._remote_publisher_registry.values())),
+            'local_publisher': list(set(
+                self._local_publisher_registry.values()))
         }
 
 
