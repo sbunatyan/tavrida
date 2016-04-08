@@ -2,7 +2,7 @@ import ConfigParser
 
 
 class DSFileEntry(object):
-    """Record contains information about service exchanges"""
+    """Record contains information about service exchanges."""
 
     def __init__(self,
                  service_name,
@@ -97,7 +97,7 @@ class DSFile(object):
 
     @property
     def services(self):
-        """Returns list of service names"""
+        """Returns list of service names."""
         return self._entries.keys()
 
     def __iter__(self):

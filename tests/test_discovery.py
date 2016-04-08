@@ -231,7 +231,7 @@ class FileBasedDiscoveryServiceNegativeTestCase(unittest.TestCase):
 
     @mock.patch('__builtin__.open')
     def test_bad_subscription(self, open_mock):
-        """Subscribe to service without notifications exchange"""
+        """Subscribe to service without notifications exchange."""
         dsfile_ini = StringIO.StringIO(VALID_DS_FILE)
         open_mock.return_value = dsfile_ini
 
