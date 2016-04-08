@@ -19,6 +19,8 @@ import abc
 
 import exceptions
 
+from tavrida import dsfile
+
 
 class AbstractDiscovery(object):
 
@@ -196,3 +198,99 @@ class LocalDiscovery(AbstractDiscovery):
             'remote_publisher': self._remote_publisher_registry.values(),
             'local_publisher': self._local_publisher_registry.values()
         }
+
+
+class FileBasedDiscoveryService(LocalDiscovery):
+    """Discovery service gets own configuration from DSFile
+
+    How to use:
+
+        disc = discovery.FileBasedDiscoveryService(
+            "ds.ini",
+            "service2",
+            subsriptions=["service1"])
+
+    ds.ini:
+        [service1]
+        exchange=service1_exchange
+        notifications=service1_notifications
+
+        [service2]
+        exchange=service2_exchange
+    """
+
+    def __init__(self,
+                 ds_filename,
+                 service_name,
+                 subscriptions=None):
+        """Construct Discovery Service
+
+        Raises exceptions.ServiceIsNotRegister if
+           1) ds_filename file doesn't contain service_name
+           2) ds_filename file doesn't contain any subsciption
+              from subscriptions
+
+        Raises exceptions.CantRegisterRemotePublisher if you try to
+        subscribe to service without notifications exchange.
+
+        :param ds_filename: .ds file path
+        :type ds_filename: string
+        :param service_name: local service name
+        :type service_name: string
+        :param subscriptions: list of services' names to subscribe to
+        :type subscriptions: list of strings
+        """
+        super(FileBasedDiscoveryService, self).__init__()
+
+        self._service_name = service_name
+        subscriptions = set(subscriptions or [])
+
+        dsf = dsfile.DSFile(ds_filename)
+        all_services_set = set(dsf)
+
+        # Check subscriptions list
+        for subscription in subscriptions:
+            if subscription not in all_services_set:
+                raise exceptions.ServiceIsNotRegister(service=subscription)
+
+        # If dsf doesn't contain record for service_name will raise
+        # KeyError exception. Raise ServiceIsNotRegistered instead of.
+        try:
+            local_service = dsf[service_name]
+        except KeyError as e:
+            raise exceptions.ServiceIsNotRegister(service=str(e))
+
+        self._service_exchange = local_service.service_exchange
+
+        # Configure discovery service using dsf.
+
+        # If this service sends notifications register local publisher
+        if local_service.notifications_exchange:
+            self.register_local_publisher(
+                self._service_name,
+                local_service.notifications_exchange)
+
+        # Register all services from dsf (excluding service_name) as a
+        # remote services
+        remote_services = all_services_set - {service_name}
+
+        for remote_service_name in remote_services:
+            remote_service = dsf[remote_service_name]
+            self.register_remote_service(remote_service.service_name,
+                                         remote_service.service_exchange)
+            # Subscribe to remote_service notifications.
+            if remote_service_name in subscriptions:
+                if not remote_service.notifications_exchange:
+                    raise exceptions.CantRegisterRemotePublisher(
+                        service=remote_service_name)
+                self.register_remote_publisher(
+                    remote_service.service_name,
+                    remote_service.notifications_exchange)
+
+    @property
+    def service_name(self):
+        return self._service_name
+
+    @property
+    def service_exchange(self):
+        return self._service_exchange

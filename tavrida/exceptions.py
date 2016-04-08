@@ -192,3 +192,13 @@ class IncorrectMessage(BaseException):
                      "Message should "
                      "be of types: IncomingRequest, Response, Error")
     _service_error_code = 1031
+
+
+class CantRegisterRemotePublisher(BaseException):
+    """Raises from FileBasedDiscoveryService.
+
+    If service try to subscribe to unknown service
+    """
+
+    _msg_template = "Can't register remote publisher for service %(service)s"
+    _service_error_code = 1030

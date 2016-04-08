@@ -12,7 +12,41 @@ It holds 3 types of pairs *service_name:service_exchange*:
 2. For remote service publisher. Is used to subscribe for notifications from remote service.
 3. For local service publisher. Is used to publish notifications by local service.
 
-To register all types of services use the example:
+Discovery service (.ds) config file
++++++++++++++++++++++++++++++++++++
+
+To use .ds file you need to describe services in .ds file in format
+
+.. code-block:: aconf
+
+    [service1]
+    exchange=service1_exchange
+    notifications=service1_notifications
+
+    [service2]
+    exchange=service2_exchange
+    notifications=service2_notifications
+
+    [service3]
+    exchange=service3_exchange
+    notifications=service3_notifications
+
+    [service4]
+    exchange=service4_exchange
+
+And then to load .ds file to :class:`tavrida.discovery.FileBasedDiscoveryService`
+
+.. code-block:: python
+    :linenos:
+
+    from tavrida import discovery
+
+    srv1_disc = discovery.FileBasedDiscoveryService("services.ds", "service1")
+
+Discovery without .ds file
+++++++++++++++++++++++++++
+
+To register all types of services use :class:`tavrida.discovery.LocalDiscovery`:
 
 .. code-block:: python
     :linenos:
@@ -69,8 +103,6 @@ Besides that you should provide discovery object while creation :class:`tavrida.
                                  exchange_name="remote_exchange")
     cli = client.RPCClient(config=conf, service="test_hello", discovery=disc,
                            source=source)
-
-Currently Tavrida has only local discovery functionality (:class:`tavrida.discovery.LocalDiscovery`).
 
 Soon the discovery that uses central settings storage will be implemented.
 But you can implement your own discovery class. The only demand is to inherit it from :class:`tavrida.discovery.AbstractDiscovery`

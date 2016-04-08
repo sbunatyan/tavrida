@@ -1,0 +1,9 @@
+[test_hello]
+exchange=test_exchange
+notifications=test_notification_exchange
+
+[test_world]
+exchange=test_world_exchange
+
+[test_chuck_norris]
+exchange=test_world_exchange
