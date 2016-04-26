@@ -16,8 +16,12 @@
 
 import abc
 import logging
+import sys
 
 from amqp_driver import driver as amqp_driver
+import config
+import configfile
+import discovery
 import exceptions
 import postprocessor
 import preprocessor
@@ -126,3 +130,66 @@ class Server(object):
                       self._config.port)
         self._driver.listen(queue=self._queue_name,
                             preprocessor=self._get_preprocessor())
+
+
+class CLIServer(Server):
+
+    """
+    CLIServer reads config file to obtain all required settings.
+    It automatically creates all config objects and binds discovery services
+    to controller classes.
+    """
+
+    def __init__(self, config_file=None, project_name=None):
+        configfile.get_config(sys.argv[1:], project_name=project_name,
+                              config_file=config_file)
+        conf = configfile.CONF
+        credentials = config.Credentials(username=conf.connection.username,
+                                         password=conf.connection.password)
+        ssl_opts = None
+        if conf.ssl:
+            ssl_opts = {
+                "keyfile": conf.ssl.keyfile,
+                "certfile": conf.ssl.certfile,
+                "server_side": False,
+                "cert_reqs": conf.ssl.cert_reqs,
+                "ssl_version": conf.ssl.ssl_version,
+                "ca_certs": conf.ssl.ca_certs,
+                "suppress_ragged_eofs": conf.ssl.suppress_ragged_eofs,
+                "ciphers": conf.ssl.ciphers,
+            }
+        conn_conf = config.ConnectionConfig(
+            host=conf.connection.host,
+            credentials=credentials,
+            port=conf.connection.port,
+            virtual_host=conf.connection.virtual_host,
+            channel_max=conf.connection.channel_max,
+            frame_max=conf.connection.frame_max,
+            heartbeat_interval=conf.connection.heartbeat_interval,
+            ssl=conf.connection.ssl,
+            ssl_options=ssl_opts,
+            connection_attempts=conf.connection.connection_attempts,
+            retry_delay=conf.connection.retry_delay,
+            socket_timeout=conf.connection.socket_timeout,
+            locale=conf.connection.locale,
+            backpressure_detection=conf.connection.backpressure_detection,
+            reconnect_attempts=conf.connection.reconnect_attempts,
+            async_engine=conf.connection.async_engine
+        )
+
+        service_list = configfile.get_services_classes()
+        service_mapping = configfile.get_service_name_class_mapping()
+        print configfile.get_services()
+        for service in configfile.get_services():
+            df = discovery.DiscoveryFactory(service["discovery"])
+            disc = df.get_discovery_service(service["name"],
+                                            service.get("subscriptions"))
+            service_mapping[service["name"]].set_discovery(disc)
+
+        super(CLIServer, self).__init__(
+            conn_conf,
+            queue_name=conf.server.queue_name,
+            exchange_name=conf.server.exchange_name,
+            service_list=service_list)
+
+
