@@ -14,9 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import setuptools
+from distutils import core
 
-
-setuptools.setup(
-    setup_requires=['pbr==0.8.2'],
-    pbr=True)
+core.setup(
+    name='tavrida',
+    packages=['tavrida'],
+    version='1.0.0',
+    description="RPC and Pub/Sub over RabbitMQ",
+    author="Sergey Bunatyan",
+    author_email="sergey@bunatian.ru",
+    url="https://github.com/sbunatyan/tavrida",
+    download_url="https://github.com/sbunatyan/tavrida/tree/1.0.0",
+    keywords=["amqp", "prc", "tavrida", "rabbitmq"])
