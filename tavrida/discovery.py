@@ -296,3 +296,53 @@ class FileBasedDiscoveryService(LocalDiscovery):
     @property
     def service_exchange(self):
         return self._service_exchange
+
+
+class DiscoveryFactory(object):
+
+    """
+    Discovery factory creates discovery service instances depending on the
+    path/url to the discovery service
+    """
+
+    def __init__(self, path=None):
+        self._path = path
+
+    def get_local_ds(self):
+        """
+        Returns local discovery instance
+
+        :return: local discovery instance
+        :rtype: LocalDiscovery
+        """
+        return LocalDiscovery()
+
+    def get_file_ds(self, service_name, subscriptions):
+        """
+        Returns file based discovery instance
+
+        :param service_name: local service name
+        :type service_name: string
+        :param subscriptions: list of services' names to subscribe to
+        :type subscriptions: list of strings
+        :return: file based discovery instance
+        :rtype: FileBasedDiscoveryService
+        """
+        return FileBasedDiscoveryService(self._path, service_name,
+                                         subscriptions)
+
+    def get_discovery_service(self, service_name=None, subscriptions=None):
+        """
+        Returns appropriate discovery service instance
+
+        :param service_name: local service name
+        :type service_name: string
+        :param subscriptions: list of services' names to subscribe to
+        :type subscriptions: list of strings
+        :return: appropriate discovery service instance
+        :rtype: AbstractDiscovery
+        """
+        if not self._path:
+            return self.get_local_ds()
+        else:
+            return self.get_file_ds(service_name, subscriptions)

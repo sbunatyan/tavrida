@@ -202,3 +202,8 @@ class CantRegisterRemotePublisher(BaseException):
 
     _msg_template = "Can't register remote publisher for service %(service)s"
     _service_error_code = 1030
+
+
+class ConfigFileIsNotDefined(BaseException):
+    _msg_template = "Config file is not defined"
+    _service_error_code = 1050
