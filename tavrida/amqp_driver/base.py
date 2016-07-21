@@ -7,6 +7,7 @@ class AbstractClient(object):
 
     def __init__(self, config):
         super(AbstractClient, self).__init__()
+        self._raw_config = config
         self._reconnect_attempts = config.reconnect_attempts
         self._current_reconnect_attempt = 0
 
@@ -26,6 +27,10 @@ class AbstractClient(object):
     @property
     def connection(self):
         return self._connection
+
+    @property
+    def config(self):
+        return self._raw_config
 
 
 class AbstractReader(AbstractClient):
@@ -63,4 +68,15 @@ class AbstractWriter(AbstractClient):
 
     @abc.abstractmethod
     def create_exchange(self, exchange_name, ex_type):
+        pass
+
+
+class AbstractWriterFactory(object):
+
+    @abc.abstractmethod
+    def get_writer(self, config):
+        pass
+
+    @abc.abstractmethod
+    def get_writer_by_reader(self, reader):
         pass

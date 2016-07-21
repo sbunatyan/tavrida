@@ -92,6 +92,41 @@ class AMQPDriverSyncAndAsyncTestCase(unittest.TestCase):
         writer = drvr.create_writer()
         self.assertEqual(writer, engine_mock())
 
+    @mock.patch.object(pika_sync.WriterFactory, "get_writer_by_reader")
+    def test_publish_message_via_existing_reader_sync(self, get_mock):
+
+        """
+        Tests that message is published via existing reader
+        """
+        conf = config.ConnectionConfig(self.host, self.credentials)
+        drvr = driver.AMQPDriver(conf)
+        drvr._reader = mock.MagicMock()
+        exchange = "exchange_name"
+        routing_key = "rk"
+        message = mock.MagicMock()
+
+        drvr.publish_message(exchange, routing_key, message)
+        get_mock().publish_message.assert_called_once_with(
+            exchange, routing_key, message)
+
+    @mock.patch.object(pika_async.WriterFactory, "get_writer_by_reader")
+    def test_publish_message_via_existing_reader_async(self, get_mock):
+
+        """
+        Tests that message is published via existing reader
+        """
+        conf = config.ConnectionConfig(self.host, self.credentials,
+                                       async_engine=True)
+        drvr = driver.AMQPDriver(conf)
+        drvr._reader = mock.MagicMock()
+        exchange = "exchange_name"
+        routing_key = "rk"
+        message = mock.MagicMock()
+
+        drvr.publish_message(exchange, routing_key, message)
+        get_mock().publish_message.assert_called_once_with(
+            exchange, routing_key, message)
+
 
 class AMQPDriverTestCase(unittest.TestCase):
 
@@ -143,19 +178,6 @@ class AMQPDriverTestCase(unittest.TestCase):
         get_blocking_reader_mock.assert_called_once_with(queue)
         get_blocking_reader_mock().bind_queue.assert_called_once_with(
             exchange, service_name + ".#")
-
-    def test_publish_message_via_existing_reader(self):
-
-        """
-        Tests that message is published via existing reader
-        """
-        self.driver._reader = mock.MagicMock()
-        exchange = "exchange_name"
-        routing_key = "rk"
-        message = mock.MagicMock()
-        self.driver.publish_message(exchange, routing_key, message)
-        self.driver._reader.publish_message.assert_called_once_with(
-            exchange, routing_key, message)
 
     @mock.patch.object(driver.AMQPDriver, "create_writer")
     def test_publish_message_via_new_writer(self, mock_get_writer):

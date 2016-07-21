@@ -17,6 +17,11 @@ class PikaClient(base.AbstractClient):
         super(PikaClient, self).__init__(config)
         self._connection = None
         self._channel = None
+        self._config = config.to_pika_params()
+
+    @property
+    def channel(self):
+        return self._channel
 
     def close_connection(self):
         if self._channel:
@@ -29,10 +34,8 @@ class Reader(PikaClient, base.AbstractReader):
 
     def __init__(self, config, queue, preprocessor):
         super(Reader, self).__init__(config)
-        self._config = config.to_pika_params()
         self.log = logging.getLogger(__name__)
         self._queue = queue
-        self._channel = None
         self.preprocessor = preprocessor
 
     def connect(self):
@@ -102,22 +105,19 @@ class Reader(PikaClient, base.AbstractReader):
         finally:
             self.close_connection()
 
-    def publish_message(self, exchange, routing_key, message):
-        self.connect()
-        props = pika.BasicProperties(headers=message.headers)
-        self._channel.basic_publish(exchange=exchange,
-                                    routing_key=routing_key,
-                                    body=message.body,
-                                    properties=props)
-
 
 class Writer(PikaClient, base.AbstractWriter):
 
     def __init__(self, config):
         super(Writer, self).__init__(config)
-        self._config = config.to_pika_params()
         self.log = logging.getLogger(__name__)
-        self._channel = None
+
+    @classmethod
+    def create_from_reader(cls, reader):
+        writer = cls(reader.config)
+        writer._connection = reader.connection
+        writer._channel = reader.channel
+        return writer
 
     def connect(self):
         try:
@@ -152,3 +152,12 @@ class Writer(PikaClient, base.AbstractWriter):
                                            durable=True)
         finally:
             self.close_connection()
+
+
+class WriterFactory(base.AbstractWriterFactory):
+
+    def get_writer(self, config):
+        return Writer(config)
+
+    def get_writer_by_reader(self, reader):
+        return Writer.create_from_reader(reader)

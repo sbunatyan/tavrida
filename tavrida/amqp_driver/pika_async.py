@@ -19,6 +19,10 @@ class BasePikaAsync(base.AbstractClient):
         self.log = logging.getLogger(__name__)
         super(BasePikaAsync, self).__init__(config)
 
+    @property
+    def channel(self):
+        return self._channel
+
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
         When the connection is established, the on_connection_open method
@@ -151,9 +155,8 @@ class BasePikaAsync(base.AbstractClient):
             self._connection.close()
 
 
-class Reader(BasePikaAsync, base.AbstractReader):
-    """This is an example consumer that will handle unexpected interactions
-    with RabbitMQ such as channel and connection closures.
+class Reader(BasePikaAsync, base.AbstractReader, base.AbstractWriter):
+    """Async pika client (reader + writer).
 
     If RabbitMQ closes the connection, it will reopen it. You should
     look at the output, as there are limited reasons why the connection may
@@ -164,11 +167,6 @@ class Reader(BasePikaAsync, base.AbstractReader):
     commands that were issued and that should surface in the output as well.
 
     """
-    EXCHANGE = 'message'
-    EXCHANGE_TYPE = 'topic'
-    QUEUE = 'text'
-    ROUTING_KEY = 'example.text'
-
     def __init__(self, config, queue, preprocessor):
         """Create a new instance of the consumer class, passing in the AMQP
         URL used to connect to RabbitMQ.
@@ -177,8 +175,6 @@ class Reader(BasePikaAsync, base.AbstractReader):
 
         """
         super(Reader, self).__init__(config)
-        self._connection = None
-        self._channel = None
         self._consumer_tag = None
         self._config = config.to_pika_params()
         self.log = logging.getLogger(__name__)
@@ -340,27 +336,7 @@ class Writer(BasePikaAsync, base.AbstractWriter):
         super(Writer, self).__init__(config)
         self._config = config.to_pika_params()
         self.log = logging.getLogger(__name__)
-        self._connection = None
-        self._channel = None
-        self._closing = False
-        self._stopping = False
         self._publish_interval = 0
-
-    def stop(self):
-        """Stop the example by closing the channel and connection. We
-        set a flag here so that we stop scheduling new messages to be
-        published. The IOLoop is started because this method is
-        invoked by the Try/Catch below when KeyboardInterrupt is caught.
-        Starting the IOLoop again will allow the publisher to cleanly
-        disconnect from RabbitMQ.
-
-        """
-        self.log.info('Stopping')
-        self._stopping = True
-        self.close_channel()
-        self.close_connection()
-        self._connection.ioloop.start()
-        self.log.info('Stopped')
 
     def create_exchange(self, exchange_name, ex_type):
         ExchangeCreator(self._config, exchange_name, ex_type).create_exchange()
@@ -420,7 +396,6 @@ class Publisher(object):
                                     body=self._message.body,
                                     properties=props)
         self.close_connection()
-        self._connection.ioloop.stop()
 
     def publish_message(self):
         self._connection = self.connect()
@@ -583,7 +558,6 @@ class BindingCreator(object):
         self._exchange_name = exchange_name
         self._routing_key = routing_key
         self.log = logging.getLogger(__name__)
-        print self._queue
 
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
@@ -649,3 +623,12 @@ class BindingCreator(object):
         """This method closes the connection to RabbitMQ."""
         if self._connection:
             self._connection.close()
+
+
+class WriterFactory(base.AbstractWriterFactory):
+
+    def get_writer(self, config):
+        return Writer(config)
+
+    def get_writer_by_reader(self, reader):
+        return reader

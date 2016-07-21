@@ -15,12 +15,13 @@ class AMQPDriver(object):
         self._reader = None
         self._writer = None
         self.log = logging.getLogger(__name__)
+        self._writer_factory = self._engine.WriterFactory()
 
     def create_reader(self, queue, preprocessor=None):
         return self._engine.Reader(self._config, queue, preprocessor)
 
     def create_writer(self):
-        return self._engine.Writer(self._config)
+        return self._writer_factory.get_writer(self._config)
 
     def _get_blocking_writer(self):
         return pika_sync.Writer(self._config)
@@ -43,7 +44,8 @@ class AMQPDriver(object):
 
     def publish_message(self, exchange, routing_key, message):
         if self._reader:
-            self._writer = self._reader
+            self._writer = self._writer_factory.get_writer_by_reader(
+                self._reader)
         else:
             self._writer = self.create_writer()
         self._writer.publish_message(exchange, routing_key, message)
