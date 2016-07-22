@@ -191,5 +191,3 @@ class CLIServer(Server):
             queue_name=conf.server.queue_name,
             exchange_name=conf.server.exchange_name,
             service_list=service_list)
-
-
