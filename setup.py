@@ -25,4 +25,4 @@ core.setup(
     author_email="sergey@bunatian.ru",
     url="https://github.com/sbunatyan/tavrida",
     download_url="https://github.com/sbunatyan/tavrida/tree/1.0.0",
-    keywords=["amqp", "prc", "tavrida", "rabbitmq"])
+    keywords=["amqp", "rpc", "tavrida", "rabbitmq"])
