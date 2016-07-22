@@ -1,0 +1,17 @@
+language: python
+python: 2.7
+env:
+  - TOX_ENV=py27
+  - TOX_ENV=pep8
+install:
+  - pip install -r requirements.txt
+  - pip install -r test-requirements.txt
+  - pip install tox codecov coverage
+script:
+  - tox -e $TOX_ENV
+after_success:
+  - coverage combine
+  - codecov
+branches:
+  only:
+    - master

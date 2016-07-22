@@ -1,5 +1,6 @@
-# tavrida
+# Tavrida
 RPC &amp; Pub/Sub over AMQP
+[![Build Status](https://travis-ci.org/sbunatyan/tavrida.svg?branch=master)](https://travis-ci.org/sbunatyan/tavrida)
 
 # Documentation
 
