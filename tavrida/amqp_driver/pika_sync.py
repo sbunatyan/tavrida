@@ -26,8 +26,10 @@ class PikaClient(base.AbstractClient):
     def close_connection(self):
         if self._channel:
             self._channel.close()
+            self._channel = None
         if self._connection:
             self._connection.close()
+            self._connection = None
 
 
 class Reader(PikaClient, base.AbstractReader):
@@ -121,8 +123,10 @@ class Writer(PikaClient, base.AbstractWriter):
 
     def connect(self):
         try:
-            self._connection = pika.BlockingConnection(self._config)
-            self._channel = self._connection.channel()
+            if not self._connection:
+                self._connection = pika.BlockingConnection(self._config)
+            if not self._channel:
+                self._channel = self._connection.channel()
         except (pika.exceptions.ConnectionClosed,
                 pika.exceptions.AMQPConnectionError) as e:
             if self._if_do_retry():
@@ -135,14 +139,11 @@ class Writer(PikaClient, base.AbstractWriter):
 
     def publish_message(self, exchange, routing_key, message):
         self.connect()
-        try:
-            props = pika.BasicProperties(headers=message.headers)
-            self._channel.basic_publish(exchange=exchange,
-                                        routing_key=routing_key,
-                                        body=message.body,
-                                        properties=props)
-        finally:
-            self.close_connection()
+        props = pika.BasicProperties(headers=message.headers)
+        self._channel.basic_publish(exchange=exchange,
+                                    routing_key=routing_key,
+                                    body=message.body,
+                                    properties=props)
 
     def create_exchange(self, exchange_name, ex_type):
         self.connect()

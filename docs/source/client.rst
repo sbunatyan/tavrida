@@ -32,6 +32,8 @@ There are several ways to create and use client.
     cli = client.RPCClient(config=conf, discovery=disc, source=source)
     cli.test_hello.hello(param=123).cast(correlation_id="123-456")
 
+    cli.close_connection() # on program exit connection is closed automatically
+
 
 .. code-block:: python
     :linenos:
@@ -55,3 +57,5 @@ There are several ways to create and use client.
 
     cli = client.RPCClient(config=conf, discovery=disc, source="source.method")
     cli.test_hello.hello(param=123).cast(correlation_id="123-456")
+
+    cli.close_connection()

@@ -46,14 +46,20 @@ class AMQPDriver(object):
         if self._reader:
             self._writer = self._writer_factory.get_writer_by_reader(
                 self._reader)
-        else:
+        elif not self._writer:
             self._writer = self.create_writer()
         self._writer.publish_message(exchange, routing_key, message)
 
     def listen(self, queue, preprocessor=None):
-        reader = self.create_reader(queue, preprocessor)
-        self._reader = reader
-        reader.run()
+        if not self._reader:
+            self._reader = self.create_reader(queue, preprocessor)
+        self._reader.run()
+
+    def close_connection(self):
+        if self._reader:
+            self._reader.close_connection()
+        if self._writer:
+            self._writer.close_connection()
 
     @property
     def reader(self):

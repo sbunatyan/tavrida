@@ -47,6 +47,7 @@ class RPCClient(object):
         self._source = source
         self._headers = copy.copy(headers) or {}
         self._context = copy.copy(context) if context else None
+        self._postprocessor = self._get_postprocessor()
 
     def _get_discovery(self):
         return discovery.LocalDiscovery()
@@ -58,13 +59,19 @@ class RPCClient(object):
         return postprocessor.PostProcessor(self._get_driver(),
                                            self._discovery)
 
+    def close_connection(self):
+        if self._postprocessor:
+            self._postprocessor.driver.close_connection()
+
     def __getattr__(self, item):
         if isinstance(self._source, entry_point.EntryPoint):
             source = self._source
         else:
             source = entry_point.EntryPointFactory().create(self._source)
 
-        postproc = self._get_postprocessor()
-        proxy = proxies.RPCProxy(postproc, source,
+        proxy = proxies.RPCProxy(self._postprocessor, source,
                                  context=self._context, headers=self._headers)
         return getattr(proxy, item)
+
+    def __del__(self):
+            self.close_connection()

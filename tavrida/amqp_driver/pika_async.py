@@ -1,3 +1,4 @@
+import functools
 import logging
 
 import pika
@@ -35,7 +36,7 @@ class BasePikaAsync(base.AbstractClient):
         """
         return pika.SelectConnection(self._config,
                                      self.on_connection_open,
-                                     stop_ioloop_on_close=False)
+                                     stop_ioloop_on_close=True)
 
     def on_connection_open(self, unused_connection):
         """This method is called by pika once the connection to RabbitMQ has
@@ -140,6 +141,7 @@ class BasePikaAsync(base.AbstractClient):
         """
         if self._channel:
             self._channel.close()
+            self._channel = None
 
     def run(self):
         """Run the example consumer by connecting to RabbitMQ and then
@@ -151,8 +153,10 @@ class BasePikaAsync(base.AbstractClient):
 
     def close_connection(self):
         """This method closes the connection to RabbitMQ."""
+        self.close_channel()
         if self._connection:
             self._connection.close()
+            self._connection = None
 
 
 class Reader(BasePikaAsync, base.AbstractReader, base.AbstractWriter):
@@ -316,7 +320,6 @@ class Reader(BasePikaAsync, base.AbstractReader, base.AbstractWriter):
         self.stop_consuming()
         self.close_channel()
         self.close_connection()
-        self._connection.ioloop.stop()
         self.log.info('Stopped')
 
     def create_exchange(self, exchange_name, ex_type):
@@ -337,25 +340,20 @@ class Writer(BasePikaAsync, base.AbstractWriter):
         self._config = config.to_pika_params()
         self.log = logging.getLogger(__name__)
         self._publish_interval = 0
+        self._connection = None
 
     def create_exchange(self, exchange_name, ex_type):
         ExchangeCreator(self._config, exchange_name, ex_type).create_exchange()
 
-    def publish_message(self, exchange, routing_key, message):
-        Publisher(self._config, exchange, routing_key, message)\
-            .publish_message()
+    def run(self, callback, args):
+        """Run the example consumer by connecting to RabbitMQ and then
+        starting the IOLoop to block and allow the SelectConnection to operate.
 
+        """
+        self._connection = self.connect(callback, args)
+        self._connection.ioloop.start()
 
-class Publisher(object):
-
-    def __init__(self, config, exchange_name, routing_key, message):
-        self._config = config
-        self._exchange_name = exchange_name
-        self._routing_key = routing_key
-        self._message = message
-        self.log = logging.getLogger(__name__)
-
-    def connect(self):
+    def connect(self, callback, args):
         """This method connects to RabbitMQ, returning the connection handle.
         When the connection is established, the on_connection_open method
         will be invoked by pika. If you want the reconnection to work, make
@@ -366,18 +364,20 @@ class Publisher(object):
 
         """
         return pika.SelectConnection(self._config,
-                                     self._open_channel,
-                                     stop_ioloop_on_close=False)
+                                     functools.partial(
+                                         self._open_channel, callback, args),
+                                     stop_ioloop_on_close=True)
 
-    def _open_channel(self, unused_connection):
+    def _open_channel(self, callback, args, unused_connection):
         """Open a new channel with RabbitMQ by issuing the Channel.Open RPC
         command. When RabbitMQ responds that the channel is open, the
         on_channel_open callback will be invoked by pika.
 
         """
-        self._connection.channel(on_open_callback=self._on_channel_open)
+        self._connection.channel(on_open_callback=functools.partial(
+            self._on_channel_open, callback, args))
 
-    def _on_channel_open(self, channel):
+    def _on_channel_open(self, callback, args, channel):
         """This method is invoked by pika when the channel has been opened.
         The channel object is passed in so we can make use of it.
 
@@ -387,24 +387,23 @@ class Publisher(object):
 
         """
         self._channel = channel
-        self._publish_message()
+        self._add_on_channel_close_callback()
+        callback(*args)
+        self._connection.ioloop.stop()
 
-    def _publish_message(self):
-        props = pika.BasicProperties(headers=self._message.headers)
-        self._channel.basic_publish(exchange=self._exchange_name,
-                                    routing_key=self._routing_key,
-                                    body=self._message.body,
+    def _publish_message(self, exchange_name, routing_key, message):
+        props = pika.BasicProperties(headers=message.headers)
+        self._channel.basic_publish(exchange=exchange_name,
+                                    routing_key=routing_key,
+                                    body=message.body,
                                     properties=props)
-        self.close_connection()
 
-    def publish_message(self):
-        self._connection = self.connect()
-
-    def close_connection(self):
-        """This method closes the connection to RabbitMQ."""
-        if self._connection:
-            self._connection.close()
-            self._connection.ioloop.stop()
+    def publish_message(self, exchange_name, routing_key, message):
+        if not self._channel:
+            self.run(self._publish_message, [exchange_name, routing_key,
+                                             message])
+        else:
+            self._publish_message(exchange_name, routing_key, message)
 
 
 class ExchangeCreator(object):
@@ -414,6 +413,7 @@ class ExchangeCreator(object):
         self._exchange_name = exchange_name
         self._ex_type = ex_type
         self.log = logging.getLogger(__name__)
+        self._connection = None
 
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
@@ -483,6 +483,7 @@ class QueueCreator(object):
         self._config = config
         self._queue = queue_name
         self.log = logging.getLogger(__name__)
+        self._connection = None
 
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
@@ -558,6 +559,7 @@ class BindingCreator(object):
         self._exchange_name = exchange_name
         self._routing_key = routing_key
         self.log = logging.getLogger(__name__)
+        self._connection = None
 
     def connect(self):
         """This method connects to RabbitMQ, returning the connection handle.
