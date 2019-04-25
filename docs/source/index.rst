@@ -17,6 +17,7 @@ Contents
 .. toctree::
    :maxdepth: 1
 
+   installation
    tutorial
    controller
    messages
@@ -37,6 +38,12 @@ Indices and tables
 
 Brief service example
 ---------------------
+
+.. code-block:: bash
+    pip install tavrida
+
+
+Hello service
 
 .. code-block:: python
     :linenos:

@@ -6,6 +6,10 @@ RPC &amp; Pub/Sub over AMQP
 
 See http://tavrida.readthedocs.org/
 
+# Installation
+
+    pip install tavrida
+
 # Brief example
 
 Service Hello
